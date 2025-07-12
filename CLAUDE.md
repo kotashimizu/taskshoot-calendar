@@ -150,7 +150,7 @@ taskshoot-calendar/
 
 1. **`要件定義書.md`** - プロジェクト全体把握
 2. **`tmp/taskshoot-calendar-phase1-detailed-sow.md`** - 実装方針確認
-3. **`tmp/taskshoot-calendar-todos-schedule.md`** - TODO・スケジュール確認
+3. **`tmp/taskshoot-calendar-todos-schedule.md`** - 詳細TODO・スケジュール確認
 4. **`.env.example`** - 環境設定確認
 
 ### 🔄 標準開発フロー
