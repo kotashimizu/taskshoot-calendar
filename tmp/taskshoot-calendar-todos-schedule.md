@@ -17,24 +17,24 @@
 
 **1. プロジェクト基盤構築**
 
-- [ ] Next.js 14プロジェクト初期化
-  - [ ] TypeScript設定
-  - [ ] ESLint・Prettier設定
-  - [ ] Git設定とコミット規約
-- [ ] ディレクトリ構造作成
-  - [ ] `app/` (Next.js App Router)
-  - [ ] `components/` (React components)
-  - [ ] `lib/` (ユーティリティ関数)
-  - [ ] `types/` (TypeScript型定義)
+- [x] Next.js 14プロジェクト初期化
+  - [x] TypeScript設定
+  - [x] ESLint・Prettier設定
+  - [x] Git設定とコミット規約
+- [x] ディレクトリ構造作成
+  - [x] `app/` (Next.js App Router)
+  - [x] `components/` (React components)
+  - [x] `lib/` (ユーティリティ関数)
+  - [x] `types/` (TypeScript型定義)
 
 **2. UI フレームワーク導入**
 
-- [ ] Tailwind CSS セットアップ
-- [ ] shadcn/ui インストール・設定
-- [ ] 基本コンポーネント追加
-  - [ ] Button, Card, Input, Label
-  - [ ] Layout components
-- [ ] レスポンシブデザイン基盤
+- [x] Tailwind CSS セットアップ
+- [x] shadcn/ui インストール・設定
+- [x] 基本コンポーネント追加
+  - [x] Button, Card, Input, Label
+  - [x] Layout components
+- [x] レスポンシブデザイン基盤
 
 **3. Supabase セットアップ**
 
