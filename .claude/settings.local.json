@@ -1,6 +1,14 @@
 {
   "permissions": {
-    "allow": ["Bash(find:*)", "Bash(mkdir:*)", "Bash(git push:*)"],
+    "allow": [
+      "Bash(find:*)",
+      "Bash(mkdir:*)",
+      "Bash(git push:*)",
+      "Bash(npm run build:*)",
+      "Bash(npm install:*)",
+      "Bash(npm audit:*)",
+      "Bash(git add:*)"
+    ],
     "deny": []
   }
 }
