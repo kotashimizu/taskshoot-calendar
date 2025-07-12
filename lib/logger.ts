@@ -35,18 +35,21 @@ class Logger {
 
   debug(message: string, data?: any): void {
     if (this.shouldLog(LogLevel.DEBUG)) {
+      // eslint-disable-next-line no-console
       console.log(this.formatMessage('DEBUG', message, data));
     }
   }
 
   info(message: string, data?: any): void {
     if (this.shouldLog(LogLevel.INFO)) {
+      // eslint-disable-next-line no-console
       console.info(this.formatMessage('INFO', message, data));
     }
   }
 
   warn(message: string, data?: any): void {
     if (this.shouldLog(LogLevel.WARN)) {
+      // eslint-disable-next-line no-console
       console.warn(this.formatMessage('WARN', message, data));
     }
   }
@@ -62,6 +65,7 @@ class Logger {
             }
           : error;
 
+      // eslint-disable-next-line no-console
       console.error(this.formatMessage('ERROR', message, errorData));
 
       // 本番環境では外部ログサービスに送信（将来的に実装）
