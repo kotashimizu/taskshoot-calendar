@@ -1,0 +1,28 @@
+# 依存関係
+node_modules/
+.next/
+out/
+dist/
+build/
+
+# ログファイル
+*.log
+logs/
+
+# 環境変数
+.env*
+
+# Git
+.git/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# その他
+coverage/
+.nyc_output/

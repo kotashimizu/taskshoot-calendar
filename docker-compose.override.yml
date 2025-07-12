@@ -1,0 +1,48 @@
+# TaskShoot Calendar - Docker Compose Override
+# 開発環境固有の設定上書き
+
+version: '3.8'
+
+services:
+  app:
+    environment:
+      # ホットリロード有効化
+      - WATCHPACK_POLLING=true
+      - CHOKIDAR_USEPOLLING=true
+    volumes:
+      # ソースコードのホットリロード
+      - .:/app
+      - /app/node_modules
+      - /app/.next
+    # デバッグ用ポート
+    ports:
+      - '3000:3000'
+      - '9229:9229' # Node.js デバッガー
+
+  # 開発用メール確認（Mailpit）
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: taskshoot-mailpit
+    ports:
+      - '8025:8025'
+      - '1025:1025'
+    environment:
+      MP_SMTP_AUTH_ACCEPT_ANY: 1
+      MP_SMTP_AUTH_ALLOW_INSECURE: 1
+    networks:
+      - taskshoot-network
+    restart: unless-stopped
+
+  # 開発用データベース管理（Adminer）
+  adminer:
+    image: adminer:latest
+    container_name: taskshoot-adminer
+    ports:
+      - '8080:8080'
+    environment:
+      ADMINER_DEFAULT_SERVER: postgres
+    networks:
+      - taskshoot-network
+    restart: unless-stopped
+    depends_on:
+      - postgres

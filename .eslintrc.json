@@ -1,0 +1,14 @@
+{
+  "extends": ["next/core-web-vitals"],
+  "rules": {
+    // General rules
+    "prefer-const": "error",
+    "no-var": "error",
+    "no-console": "warn",
+    "no-debugger": "error",
+
+    // React specific rules
+    "react/no-unescaped-entities": "error",
+    "react/jsx-no-target-blank": "error"
+  }
+}

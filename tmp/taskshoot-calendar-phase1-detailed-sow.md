@@ -3,6 +3,7 @@
 ## 📋 プロジェクト基本情報
 
 ### プロジェクト概要
+
 - **プロジェクト名**: TaskShoot Calendar
 - **Phase**: Phase 1 - 基本セットアップ + 認証システム
 - **目的**: Googleカレンダーと連携したタスク管理アプリケーションの基盤構築
@@ -10,6 +11,7 @@
 - **対象ユーザー**: 個人利用（最大100人程度）、時間管理と生産性向上を重視
 
 ### 技術要件
+
 - **Frontend**: Next.js 14 (App Router) + TypeScript
 - **UI Framework**: Tailwind CSS + shadcn/ui
 - **Backend**: Next.js API Routes
@@ -25,24 +27,28 @@
 ### 1.1 実装する機能の詳細
 
 #### 🔧 基本セットアップ
+
 - **Next.js 14 App Router** による最新のReactアプリケーション基盤
 - **TypeScript** による型安全な開発環境
 - **ESLint + Prettier** による統一されたコード品質管理
 - **Git設定** とコミット規約の確立
 
 #### 🎨 UI/UXフレームワーク
+
 - **Tailwind CSS** による効率的なスタイリング
 - **shadcn/ui** による一貫性のあるUIコンポーネント
 - **レスポンシブデザイン** による全デバイス対応
 - **日本語フォント** とローカライゼーション対応
 
 #### 🔐 認証システム
+
 - **Google OAuth 2.0** による安全なソーシャル認証
 - **Supabase Auth** による認証状態管理
 - **Row Level Security (RLS)** によるデータアクセス制御
 - **セッション管理** と自動ログアウト機能
 
 #### 🏗️ アプリケーション構造
+
 - **App Router** による現代的なルーティング
 - **レイアウトシステム** による効率的なUI管理
 - **ミドルウェア** による認証保護
@@ -51,6 +57,7 @@
 ### 1.2 期待される成果物
 
 #### 📁 成果物一覧
+
 1. **完全に設定されたNext.js 14プロジェクト**
 2. **動作する認証システム（Google OAuth）**
 3. **基本的なアプリケーションレイアウト**
@@ -61,6 +68,7 @@
 ### 1.3 成功指標
 
 #### ✅ 技術的指標
+
 - TypeScriptエラー数: **0件**
 - ESLintエラー数: **0件**
 - Lighthouseスコア: **90点以上**
@@ -68,6 +76,7 @@
 - テストカバレッジ: **80%以上**
 
 #### ✅ 機能的指標
+
 - Google OAuth認証: **正常動作**
 - レスポンシブデザイン: **全デバイス対応**
 - ページ読み込み時間: **2秒以内**
@@ -80,6 +89,7 @@
 ### 2.1 アーキテクチャ設計
 
 #### 📐 システム全体構成
+
 ```
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
 │   Frontend      │    │   Backend       │    │   Database      │
@@ -96,6 +106,7 @@
 ```
 
 #### 🗂️ フォルダ構造設計
+
 ```
 taskshoot-calendar/
 ├── app/                     # Next.js App Router
@@ -126,6 +137,7 @@ taskshoot-calendar/
 ### 2.2 データベース設計（Supabase + RLS）
 
 #### 🗄️ 基本テーブル構造
+
 ```sql
 -- ユーザーテーブル（Supabase Authと連携）
 CREATE TABLE profiles (
@@ -149,6 +161,7 @@ CREATE POLICY "Users can update own profile" ON profiles
 ```
 
 #### 🔒 RLS (Row Level Security) 設計方針
+
 1. **個人データ分離**: 各ユーザーは自分のデータのみアクセス可能
 2. **認証状態確認**: 未認証ユーザーはデータアクセス不可
 3. **最小権限原則**: 必要最小限の権限のみ付与
@@ -157,6 +170,7 @@ CREATE POLICY "Users can update own profile" ON profiles
 ### 2.3 API設計
 
 #### 🔌 RESTful API エンドポイント設計
+
 ```typescript
 // API Routes 構造
 app/api/
@@ -171,11 +185,14 @@ app/api/
 ```
 
 #### 🛡️ API セキュリティ実装
+
 ```typescript
 // 認証ミドルウェアの例
 export async function middleware(request: NextRequest) {
   const supabase = createMiddlewareClient({ req: request, res: response });
-  const { data: { session } } = await supabase.auth.getSession();
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
 
   // 保護されたルートの認証チェック
   if (request.nextUrl.pathname.startsWith('/dashboard')) {
@@ -191,6 +208,7 @@ export async function middleware(request: NextRequest) {
 ### 2.4 コンポーネント設計
 
 #### 🧩 コンポーネント階層
+
 ```
 App
 ├── RootLayout
@@ -216,6 +234,7 @@ App
 ### 3.1 認証・認可の実装方法
 
 #### 🔑 Google OAuth 2.0 実装
+
 ```typescript
 // Supabase Auth設定例
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -245,6 +264,7 @@ const signInWithGoogle = async () => {
 ```
 
 #### 🛡️ セッション管理
+
 ```typescript
 // セッション状態管理Hook
 export function useAuth() {
@@ -259,12 +279,12 @@ export function useAuth() {
     });
 
     // セッション変更監視
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        setSession(session);
-        setLoading(false);
-      }
-    );
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      setLoading(false);
+    });
 
     return () => subscription.unsubscribe();
   }, []);
@@ -276,6 +296,7 @@ export function useAuth() {
 ### 3.2 データ保護対策
 
 #### 🔒 環境変数管理
+
 ```bash
 # .env.local（機密情報）
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
@@ -287,6 +308,7 @@ GOOGLE_CLIENT_SECRET=your_google_client_secret
 ```
 
 #### 🛡️ CSP (Content Security Policy) 設定
+
 ```typescript
 // next.config.js
 const securityHeaders = [
@@ -299,28 +321,32 @@ const securityHeaders = [
       img-src 'self' blob: data: https:;
       font-src 'self' https://fonts.gstatic.com;
       connect-src 'self' https://*.supabase.co;
-    `.replace(/\s{2,}/g, ' ').trim()
-  }
+    `
+      .replace(/\s{2,}/g, ' ')
+      .trim(),
+  },
 ];
 ```
 
 ### 3.3 入力値検証方法
 
 #### ✅ Zod による型安全なバリデーション
+
 ```typescript
 import { z } from 'zod';
 
 // ユーザープロファイル用スキーマ
 export const profileSchema = z.object({
-  full_name: z.string()
+  full_name: z
+    .string()
     .min(1, '名前は必須です')
     .max(100, '名前は100文字以内で入力してください')
-    .regex(/^[a-zA-Z\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF\s]+$/, '有効な文字のみ使用してください'),
-  email: z.string()
-    .email('有効なメールアドレスを入力してください'),
-  avatar_url: z.string()
-    .url('有効なURLを入力してください')
-    .optional()
+    .regex(
+      /^[a-zA-Z\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF\s]+$/,
+      '有効な文字のみ使用してください'
+    ),
+  email: z.string().email('有効なメールアドレスを入力してください'),
+  avatar_url: z.string().url('有効なURLを入力してください').optional(),
 });
 
 // API Routeでの使用例
@@ -328,7 +354,7 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     const validatedData = profileSchema.parse(body);
-    
+
     // バリデーション済みデータで処理続行
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -344,6 +370,7 @@ export async function POST(request: Request) {
 ### 3.4 エラーハンドリング方針
 
 #### 🚨 統一エラーハンドリング
+
 ```typescript
 // lib/errors.ts
 export class AppError extends Error {
@@ -361,9 +388,9 @@ export class AppError extends Error {
 export function createErrorResponse(error: unknown) {
   if (error instanceof AppError) {
     return NextResponse.json(
-      { 
+      {
         error: error.message,
-        code: error.code 
+        code: error.code,
       },
       { status: error.statusCode }
     );
@@ -385,23 +412,25 @@ export function createErrorResponse(error: unknown) {
 ### 4.1 レスポンシブデザイン対応
 
 #### 📱 ブレークポイント設計
+
 ```typescript
 // tailwind.config.ts
 export default {
   theme: {
     screens: {
-      'xs': '475px',    // 小さなスマートフォン
-      'sm': '640px',    // スマートフォン
-      'md': '768px',    // タブレット
-      'lg': '1024px',   // デスクトップ
-      'xl': '1280px',   // 大きなデスクトップ
-      '2xl': '1536px',  // 超大画面
+      xs: '475px', // 小さなスマートフォン
+      sm: '640px', // スマートフォン
+      md: '768px', // タブレット
+      lg: '1024px', // デスクトップ
+      xl: '1280px', // 大きなデスクトップ
+      '2xl': '1536px', // 超大画面
     },
   },
 };
 ```
 
 #### 📐 レイアウトパターン
+
 ```typescript
 // レスポンシブレイアウトコンポーネント
 export function ResponsiveLayout({ children }: { children: React.ReactNode }) {
@@ -413,7 +442,7 @@ export function ResponsiveLayout({ children }: { children: React.ReactNode }) {
         <aside className="hidden lg:block lg:w-64 lg:fixed lg:h-full">
           <Sidebar />
         </aside>
-        
+
         {/* メインコンテンツ */}
         <main className="flex-1 lg:ml-64">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -429,6 +458,7 @@ export function ResponsiveLayout({ children }: { children: React.ReactNode }) {
 ### 4.2 アクセシビリティ対応
 
 #### ♿ WAI-ARIA実装
+
 ```typescript
 // アクセシブルなナビゲーションコンポーネント
 export function AccessibleNavigation() {
@@ -454,12 +484,15 @@ export function AccessibleNavigation() {
 ### 4.3 日本語UI設計
 
 #### 🈵 日本語フォント設定
+
 ```css
 /* globals.css */
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;600;700&display=swap');
 
 :root {
-  --font-sans: 'Noto Sans JP', 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', 'Meiryo', sans-serif;
+  --font-sans:
+    'Noto Sans JP', 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Yu Gothic',
+    'Meiryo', sans-serif;
 }
 
 body {
@@ -470,6 +503,7 @@ body {
 ```
 
 #### 🔤 多言語化対応基盤
+
 ```typescript
 // lib/i18n.ts
 export const messages = {
@@ -497,6 +531,7 @@ export const messages = {
 ### 4.4 shadcn/ui活用方針
 
 #### 🎨 テーマカスタマイズ
+
 ```typescript
 // components.json
 {
@@ -517,6 +552,7 @@ export const messages = {
 ```
 
 #### 🧩 カスタムコンポーネント例
+
 ```typescript
 // components/ui/loading-button.tsx
 interface LoadingButtonProps extends ButtonProps {
@@ -541,6 +577,7 @@ export function LoadingButton({ loading, children, ...props }: LoadingButtonProp
 ### 5.1 TypeScript型安全性確保
 
 #### 📘 strict設定
+
 ```json
 // tsconfig.json
 {
@@ -557,6 +594,7 @@ export function LoadingButton({ loading, children, ...props }: LoadingButtonProp
 ```
 
 #### 🔍 型定義例
+
 ```typescript
 // types/database.ts
 export interface Database {
@@ -590,6 +628,7 @@ export interface Database {
 ### 5.2 ESLint・Prettier設定
 
 #### 🔧 ESLint設定
+
 ```json
 // .eslintrc.json
 {
@@ -608,6 +647,7 @@ export interface Database {
 ```
 
 #### 💅 Prettier設定
+
 ```json
 // .prettierrc
 {
@@ -623,6 +663,7 @@ export interface Database {
 ### 5.3 テスト方針
 
 #### 🧪 テスト戦略
+
 ```typescript
 // __tests__/auth.test.tsx
 import { render, screen, fireEvent } from '@testing-library/react';
@@ -637,7 +678,7 @@ describe('LoginForm', () => {
   it('should handle OAuth sign in', async () => {
     const mockSignIn = jest.fn();
     render(<LoginForm onSignIn={mockSignIn} />);
-    
+
     fireEvent.click(screen.getByText('Googleでログイン'));
     expect(mockSignIn).toHaveBeenCalled();
   });
@@ -651,6 +692,7 @@ describe('LoginForm', () => {
 ### 6.1 プロジェクト初期セットアップ
 
 #### Step 1: Next.js プロジェクト作成
+
 ```diff
 # 新規プロジェクト作成
 + npx create-next-app@latest taskshoot-calendar --typescript --tailwind --eslint --app --src-dir=false --import-alias="@/*"
@@ -658,6 +700,7 @@ describe('LoginForm', () => {
 ```
 
 #### Step 2: 依存関係追加
+
 ```diff
 # package.json
 {
@@ -681,6 +724,7 @@ describe('LoginForm', () => {
 ### 6.2 設定ファイル作成
 
 #### Step 3: TypeScript設定
+
 ```diff
 # tsconfig.json
 {
@@ -715,6 +759,7 @@ describe('LoginForm', () => {
 ```
 
 #### Step 4: Tailwind設定
+
 ```diff
 # tailwind.config.ts
 import type { Config } from 'tailwindcss'
@@ -801,11 +846,13 @@ export default config
 ### 6.3 shadcn/ui セットアップ
 
 #### Step 5: shadcn/ui 初期化
+
 ```diff
 + npx shadcn-ui@latest init
 ```
 
 #### Step 6: 基本コンポーネント追加
+
 ```diff
 + npx shadcn-ui@latest add button
 + npx shadcn-ui@latest add card
@@ -819,6 +866,7 @@ export default config
 ### 6.4 Supabase設定
 
 #### Step 7: Supabaseクライアント作成
+
 ```diff
 + mkdir lib/supabase
 ```
@@ -826,7 +874,7 @@ export default config
 ```diff
 # lib/supabase/client.ts
 + import { createBrowserClient } from '@supabase/ssr'
-+ 
++
 + export function createClient() {
 +   return createBrowserClient(
 +     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -839,10 +887,10 @@ export default config
 # lib/supabase/server.ts
 + import { createServerClient, type CookieOptions } from '@supabase/ssr'
 + import { cookies } from 'next/headers'
-+ 
++
 + export function createClient() {
 +   const cookieStore = cookies()
-+ 
++
 +   return createServerClient(
 +     process.env.NEXT_PUBLIC_SUPABASE_URL!,
 +     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -872,6 +920,7 @@ export default config
 ```
 
 #### Step 8: 型定義作成
+
 ```diff
 + mkdir types
 ```
@@ -885,7 +934,7 @@ export default config
 +   | null
 +   | { [key: string]: Json | undefined }
 +   | Json[]
-+ 
++
 + export interface Database {
 +   public: {
 +     Tables: {
@@ -926,6 +975,7 @@ export default config
 ### 6.5 認証システム実装
 
 #### Step 9: 認証フック作成
+
 ```diff
 + mkdir hooks
 ```
@@ -933,17 +983,17 @@ export default config
 ```diff
 # hooks/use-auth.ts
 + 'use client'
-+ 
++
 + import { useEffect, useState } from 'react'
 + import { User, Session } from '@supabase/supabase-js'
 + import { createClient } from '@/lib/supabase/client'
-+ 
++
 + export function useAuth() {
 +   const [user, setUser] = useState<User | null>(null)
 +   const [session, setSession] = useState<Session | null>(null)
 +   const [loading, setLoading] = useState(true)
 +   const supabase = createClient()
-+ 
++
 +   useEffect(() => {
 +     const getSession = async () => {
 +       const { data: { session } } = await supabase.auth.getSession()
@@ -951,9 +1001,9 @@ export default config
 +       setUser(session?.user ?? null)
 +       setLoading(false)
 +     }
-+ 
++
 +     getSession()
-+ 
++
 +     const { data: { subscription } } = supabase.auth.onAuthStateChange(
 +       async (event, session) => {
 +         setSession(session)
@@ -961,10 +1011,10 @@ export default config
 +         setLoading(false)
 +       }
 +     )
-+ 
++
 +     return () => subscription.unsubscribe()
 +   }, [supabase])
-+ 
++
 +   const signInWithGoogle = async () => {
 +     const { error } = await supabase.auth.signInWithOAuth({
 +       provider: 'google',
@@ -974,12 +1024,12 @@ export default config
 +     })
 +     if (error) throw error
 +   }
-+ 
++
 +   const signOut = async () => {
 +     const { error } = await supabase.auth.signOut()
 +     if (error) throw error
 +   }
-+ 
++
 +   return {
 +     user,
 +     session,
@@ -991,6 +1041,7 @@ export default config
 ```
 
 #### Step 10: 認証コンポーネント作成
+
 ```diff
 + mkdir components/auth
 ```
@@ -998,11 +1049,11 @@ export default config
 ```diff
 # components/auth/auth-provider.tsx
 + 'use client'
-+ 
++
 + import { createContext, useContext, ReactNode } from 'react'
 + import { useAuth } from '@/hooks/use-auth'
 + import { User, Session } from '@supabase/supabase-js'
-+ 
++
 + interface AuthContextType {
 +   user: User | null
 +   session: Session | null
@@ -1010,19 +1061,19 @@ export default config
 +   signInWithGoogle: () => Promise<void>
 +   signOut: () => Promise<void>
 + }
-+ 
++
 + const AuthContext = createContext<AuthContextType | undefined>(undefined)
-+ 
++
 + export function AuthProvider({ children }: { children: ReactNode }) {
 +   const auth = useAuth()
-+ 
++
 +   return (
 +     <AuthContext.Provider value={auth}>
 +       {children}
 +     </AuthContext.Provider>
 +   )
 + }
-+ 
++
 + export function useAuthContext() {
 +   const context = useContext(AuthContext)
 +   if (context === undefined) {
@@ -1035,17 +1086,17 @@ export default config
 ```diff
 # components/auth/login-form.tsx
 + 'use client'
-+ 
++
 + import { useState } from 'react'
 + import { Button } from '@/components/ui/button'
 + import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 + import { useAuthContext } from './auth-provider'
 + import { Loader2 } from 'lucide-react'
-+ 
++
 + export function LoginForm() {
 +   const [loading, setLoading] = useState(false)
 +   const { signInWithGoogle } = useAuthContext()
-+ 
++
 +   const handleSignIn = async () => {
 +     try {
 +       setLoading(true)
@@ -1056,7 +1107,7 @@ export default config
 +       setLoading(false)
 +     }
 +   }
-+ 
++
 +   return (
 +     <div className="flex min-h-screen items-center justify-center bg-gray-50">
 +       <Card className="w-full max-w-md">
@@ -1086,6 +1137,7 @@ export default config
 ### 6.6 レイアウト実装
 
 #### Step 11: レイアウトコンポーネント作成
+
 ```diff
 + mkdir components/layout
 ```
@@ -1093,7 +1145,7 @@ export default config
 ```diff
 # components/layout/header.tsx
 + 'use client'
-+ 
++
 + import { Button } from '@/components/ui/button'
 + import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 + import {
@@ -1105,10 +1157,10 @@ export default config
 + } from '@/components/ui/dropdown-menu'
 + import { useAuthContext } from '@/components/auth/auth-provider'
 + import { LogOut, Settings, User } from 'lucide-react'
-+ 
++
 + export function Header() {
 +   const { user, signOut } = useAuthContext()
-+ 
++
 +   const handleSignOut = async () => {
 +     try {
 +       await signOut()
@@ -1116,14 +1168,14 @@ export default config
 +       console.error('ログアウトエラー:', error)
 +     }
 +   }
-+ 
++
 +   return (
 +     <header className="border-b bg-white">
 +       <div className="container mx-auto flex h-16 items-center justify-between px-4">
 +         <div className="flex items-center space-x-4">
 +           <h1 className="text-xl font-bold">TaskShoot Calendar</h1>
 +         </div>
-+ 
++
 +         <div className="flex items-center space-x-4">
 +           <DropdownMenu>
 +             <DropdownMenuTrigger asChild>
@@ -1169,6 +1221,7 @@ export default config
 ```
 
 #### Step 12: App Router ページ作成
+
 ```diff
 # app/layout.tsx
 import type { Metadata } from 'next'
@@ -1205,15 +1258,15 @@ export default function RootLayout({
 ```diff
 # app/page.tsx
 + 'use client'
-+ 
++
 + import { useAuthContext } from '@/components/auth/auth-provider'
 + import { LoginForm } from '@/components/auth/login-form'
 + import { Header } from '@/components/layout/header'
 + import { Loader2 } from 'lucide-react'
-+ 
++
 + export default function Home() {
 +   const { user, loading } = useAuthContext()
-+ 
++
 +   if (loading) {
 +     return (
 +       <div className="flex min-h-screen items-center justify-center">
@@ -1221,11 +1274,11 @@ export default function RootLayout({
 +       </div>
 +     )
 +   }
-+ 
++
 +   if (!user) {
 +     return <LoginForm />
 +   }
-+ 
++
 +   return (
 +     <div className="min-h-screen bg-gray-50">
 +       <Header />
@@ -1241,6 +1294,7 @@ export default function RootLayout({
 ```
 
 #### Step 13: 認証コールバック処理
+
 ```diff
 + mkdir app/auth/callback
 ```
@@ -1249,12 +1303,12 @@ export default function RootLayout({
 # app/auth/callback/route.ts
 + import { createClient } from '@/lib/supabase/server'
 + import { NextRequest, NextResponse } from 'next/server'
-+ 
++
 + export async function GET(request: NextRequest) {
 +   const { searchParams, origin } = new URL(request.url)
 +   const code = searchParams.get('code')
 +   const next = searchParams.get('next') ?? '/'
-+ 
++
 +   if (code) {
 +     const supabase = createClient()
 +     const { error } = await supabase.auth.exchangeCodeForSession(code)
@@ -1262,25 +1316,26 @@ export default function RootLayout({
 +       return NextResponse.redirect(`${origin}${next}`)
 +     }
 +   }
-+ 
++
 +   // エラーが発生した場合はログインページにリダイレクト
 +   return NextResponse.redirect(`${origin}/login`)
 + }
 ```
 
 #### Step 14: ミドルウェア設定
+
 ```diff
 # middleware.ts
 + import { createServerClient, type CookieOptions } from '@supabase/ssr'
 + import { NextResponse, type NextRequest } from 'next/server'
-+ 
++
 + export async function middleware(request: NextRequest) {
 +   let response = NextResponse.next({
 +     request: {
 +       headers: request.headers,
 +     },
 +   })
-+ 
++
 +   const supabase = createServerClient(
 +     process.env.NEXT_PUBLIC_SUPABASE_URL!,
 +     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -1326,12 +1381,12 @@ export default function RootLayout({
 +       },
 +     }
 +   )
-+ 
++
 +   await supabase.auth.getUser()
-+ 
++
 +   return response
 + }
-+ 
++
 + export const config = {
 +   matcher: [
 +     '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
@@ -1342,6 +1397,7 @@ export default function RootLayout({
 ### 6.5 環境変数とデプロイ設定
 
 #### Step 15: 環境変数設定
+
 ```diff
 # .env.local（既に作成済み）
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
@@ -1353,6 +1409,7 @@ NEXTAUTH_SECRET=your_nextauth_secret
 ```
 
 #### Step 16: Vercel設定
+
 ```diff
 # vercel.json
 + {
@@ -1376,6 +1433,7 @@ NEXTAUTH_SECRET=your_nextauth_secret
 ### 7.1 動作確認手順
 
 #### 🔍 ローカル環境での検証
+
 ```bash
 # 1. 依存関係のインストール確認
 npm install
@@ -1394,6 +1452,7 @@ npm run dev
 ```
 
 #### 🌐 ブラウザでの確認項目
+
 1. **ログイン機能**
    - [ ] Googleログインボタンが表示される
    - [ ] Google認証画面が正常に表示される
@@ -1413,6 +1472,7 @@ npm run dev
 ### 7.2 セキュリティテスト手順
 
 #### 🛡️ セキュリティチェックリスト
+
 1. **認証・認可**
    - [ ] 未認証ユーザーはダッシュボードにアクセスできない
    - [ ] セッション有効期限が適切に管理されている
@@ -1431,6 +1491,7 @@ npm run dev
 ### 7.3 パフォーマンス確認方法
 
 #### ⚡ Lighthouse監査
+
 ```bash
 # Lighthouse CLI実行
 npm install -g lighthouse
@@ -1438,6 +1499,7 @@ lighthouse http://localhost:3000 --output=html --output-path=./lighthouse-report
 ```
 
 #### 📊 期待値
+
 - **Performance**: 90点以上
 - **Accessibility**: 95点以上
 - **Best Practices**: 95点以上
@@ -1446,6 +1508,7 @@ lighthouse http://localhost:3000 --output=html --output-path=./lighthouse-report
 ### 7.4 ブラウザ互換性確認
 
 #### 🌐 対応ブラウザ
+
 - Chrome (最新版 + 1つ前のバージョン)
 - Firefox (最新版 + 1つ前のバージョン)
 - Safari (最新版 + 1つ前のバージョン)
@@ -1458,15 +1521,19 @@ lighthouse http://localhost:3000 --output=html --output-path=./lighthouse-report
 ### 8.1 技術的リスク
 
 #### 🔧 Next.js 14 App Router の学習コスト
+
 **リスク**: 新しいApp Routerの概念に慣れるまでの時間
-**対策**: 
+**対策**:
+
 - 公式ドキュメントの熟読
 - 段階的な実装によるリスク分散
 - 既存のPages Routerからの移行経験活用
 
 #### 🔌 Supabase API の制限
+
 **リスク**: APIレート制限やサービス制限
 **対策**:
+
 - 適切なキャッシング戦略
 - エラーハンドリングの実装
 - バックアップ認証方式の検討
@@ -1474,15 +1541,19 @@ lighthouse http://localhost:3000 --output=html --output-path=./lighthouse-report
 ### 8.2 セキュリティリスク
 
 #### 🛡️ OAuth フロー の脆弱性
+
 **リスク**: OAuth実装時のセキュリティホール
 **対策**:
+
 - Supabaseの公式実装パターンに従う
 - PKCE（Proof Key for Code Exchange）の使用
 - 定期的なセキュリティ監査
 
 #### 🔐 環境変数の漏洩
+
 **リスク**: APIキーや機密情報の露出
 **対策**:
+
 - .env.local の .gitignore 追加
 - Vercel環境変数の適切な設定
 - 定期的なキーローテーション
@@ -1490,15 +1561,19 @@ lighthouse http://localhost:3000 --output=html --output-path=./lighthouse-report
 ### 8.3 スケジュールリスク
 
 #### ⏰ 実装時間の見積もり不足
+
 **リスク**: Phase 1完了予定の遅延
 **対策**:
+
 - MVP (Minimum Viable Product) アプローチ
 - 段階的なリリース戦略
 - バッファタイムの確保
 
 #### 🐛 デバッグ時間の増大
+
 **リスク**: 予期しないバグによる開発遅延
 **対策**:
+
 - 早期のテスト実装
 - TypeScriptによる型安全性確保
 - コードレビューの実施
@@ -1506,15 +1581,19 @@ lighthouse http://localhost:3000 --output=html --output-path=./lighthouse-report
 ### 8.4 運用リスク
 
 #### 🌐 Vercel デプロイ時の問題
+
 **リスク**: デプロイエラーや設定ミス
 **対策**:
+
 - ローカル環境での十分なテスト
 - 段階的デプロイ（staging → production）
 - デプロイ前チェックリストの作成
 
 #### 📊 Supabase サービス依存
+
 **リスク**: Supabaseサービス障害時の影響
 **対策**:
+
 - エラーハンドリングの充実
 - ユーザー向け障害情報の表示
 - 代替認証方式の検討
@@ -1526,13 +1605,16 @@ lighthouse http://localhost:3000 --output=html --output-path=./lighthouse-report
 ### 9.1 進捗管理
 
 #### 📅 週次チェックポイント
+
 **毎週金曜日 17:00**
+
 - [ ] 実装進捗確認
 - [ ] 課題・ブロッカーの特定
 - [ ] 翌週の計画調整
 - [ ] 品質指標のチェック
 
 #### 🎯 マイルストーン
+
 - **Week 1終了時**: 基本セットアップ完了
 - **Week 2終了時**: 認証システム完了
 - **Phase 1完了時**: Vercelデプロイ成功
@@ -1540,12 +1622,14 @@ lighthouse http://localhost:3000 --output=html --output-path=./lighthouse-report
 ### 9.2 品質管理
 
 #### 🔍 コードレビュー基準
+
 - TypeScript型エラー 0件
 - ESLintエラー 0件
 - テストカバレッジ 80%以上
 - セキュリティチェック通過
 
 #### 📊 KPI監視
+
 - ページ読み込み時間 < 2秒
 - First Contentful Paint < 1.5秒
 - Cumulative Layout Shift < 0.1

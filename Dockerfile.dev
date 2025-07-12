@@ -1,0 +1,34 @@
+# TaskShoot Calendar - Development Dockerfile
+# 開発環境用の最適化された設定
+
+FROM node:18-alpine AS base
+
+# 開発用パッケージのインストール
+RUN apk add --no-cache libc6-compat curl
+
+# 作業ディレクトリ設定
+WORKDIR /app
+
+# 依存関係ファイルをコピー
+COPY package.json package-lock.json* ./
+
+# 開発依存関係を含めてインストール
+RUN npm ci
+
+# アプリケーションファイルをコピー
+COPY . .
+
+# 環境変数設定
+ENV NODE_ENV=development
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV PORT=3000
+
+# ポート公開
+EXPOSE 3000
+
+# ヘルスチェック（開発用）
+HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
+  CMD curl -f http://localhost:3000 || exit 1
+
+# 開発サーバー起動
+CMD ["npm", "run", "dev"]
