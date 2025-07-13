@@ -120,7 +120,7 @@ CREATE INDEX tasks_priority_idx ON public.tasks(user_id, priority);
 CREATE INDEX tasks_due_date_idx ON public.tasks(user_id, due_date);
 CREATE INDEX tasks_created_at_idx ON public.tasks(user_id, created_at);
 CREATE INDEX tasks_updated_at_idx ON public.tasks(user_id, updated_at);
-CREATE INDEX tasks_title_search_idx ON public.tasks USING gin(to_tsvector('japanese', title));
+CREATE INDEX tasks_title_search_idx ON public.tasks USING gin(to_tsvector('english', title));
 
 -- Create default categories for new users
 CREATE OR REPLACE FUNCTION public.create_default_categories(p_user_id UUID)

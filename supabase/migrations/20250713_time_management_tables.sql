@@ -82,10 +82,11 @@ CREATE TABLE IF NOT EXISTS time_records (
     
     -- 制約
     CONSTRAINT valid_time_range CHECK (end_time IS NULL OR end_time > start_time),
-    CONSTRAINT no_overlapping_active_records EXCLUDE USING gist (
-        user_id WITH =,
-        tstzrange(start_time, COALESCE(end_time, 'infinity'::timestamptz), '[)') WITH &&
-    ) WHERE (status = 'active' AND NOT is_break)
+    -- 重複するアクティブレコードの制約（GiSTエクステンション必要）
+    -- CONSTRAINT no_overlapping_active_records EXCLUDE USING gist (
+    --     user_id WITH =,
+    --     tstzrange(start_time, COALESCE(end_time, 'infinity'::timestamptz), '[)') WITH &&
+    -- ) WHERE (status = 'active' AND NOT is_break)
 );
 
 -- 時間見積もり履歴テーブル
@@ -204,7 +205,8 @@ CREATE INDEX IF NOT EXISTS idx_time_records_task_id ON time_records(task_id);
 CREATE INDEX IF NOT EXISTS idx_time_records_start_time ON time_records(start_time);
 CREATE INDEX IF NOT EXISTS idx_time_records_status ON time_records(status);
 CREATE INDEX IF NOT EXISTS idx_time_records_user_status ON time_records(user_id, status);
-CREATE INDEX IF NOT EXISTS idx_time_records_date_range ON time_records USING GIST (tstzrange(start_time, COALESCE(end_time, 'infinity'::timestamptz)));
+-- GiSTインデックス（btreeエクステンションが必要）
+-- CREATE INDEX IF NOT EXISTS idx_time_records_date_range ON time_records USING GIST (tstzrange(start_time, COALESCE(end_time, 'infinity'::timestamptz)));
 
 -- work_sessions テーブル
 CREATE INDEX IF NOT EXISTS idx_work_sessions_user_date ON work_sessions(user_id, session_date);
