@@ -89,7 +89,7 @@ export async function POST(request: NextRequest) {
       throw new Error('タスクのタイトルは必須です')
     }
 
-    const task = await taskService.createTask(user!.id, body)
+    const task = await taskService.createTask(user!.id, { ...body, user_id: user!.id })
 
     return createSuccessResponse(task, 201, 'タスクが正常に作成されました')
 

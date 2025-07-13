@@ -25,3 +25,6 @@ export function createClient() {
     throw new Error('Supabase client initialization failed');
   }
 }
+
+// デフォルトエクスポートとしてクライアントインスタンスを提供
+export const supabase = createClient()

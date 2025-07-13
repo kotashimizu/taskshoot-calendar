@@ -1,13 +1,11 @@
 /**
- * レガシータスクサービス（後方互換性のため）
- * 新しいアーキテクチャへの移行期間中のアダプター
- * 
- * @deprecated 新しいアーキテクチャのTaskServiceを使用してください
+ * シンプルなタスクサービス
+ * 要件定義に基づく実用的な実装
  */
 
-import { createClient } from '@/lib/supabase/server'
+import { supabase } from '@/lib/supabase/client'
 import { logger } from '@/lib/logger'
-import {
+import type {
   Task,
   TaskInsert,
   TaskUpdate,
@@ -17,30 +15,16 @@ import {
   TaskStats,
   Category,
   CategoryInsert,
-  CategoryUpdate,
-  TASK_CONSTRAINTS,
-  CATEGORY_CONSTRAINTS
+  CategoryUpdate
 } from '@/types/tasks'
-import { 
-  SERVICE_TOKENS,
-  withServiceScope 
-} from '@/lib/architecture/services'
-import { 
-  publishTaskCreated, 
-  publishTaskUpdated, 
-  publishTaskDeleted 
-} from '@/lib/architecture/events'
 
 /**
- * @deprecated レガシータスクサービス
- * 新しいアーキテクチャのサービスに移行してください
+ * タスク管理サービス
  */
-export class LegacyTaskService {
-  private getSupabase() {
-    return createClient()
-  }
-
-  // タスク関連のメソッド
+export class TaskService {
+  /**
+   * タスク一覧を取得
+   */
   async getTasks(
     userId: string,
     filters?: TaskFilters,
@@ -49,7 +33,8 @@ export class LegacyTaskService {
     offset?: number
   ): Promise<TaskWithCategory[]> {
     try {
-      const supabase = this.getSupabase()
+      logger.debug('Getting tasks', { userId, filters, sort, limit, offset })
+
       let query = supabase
         .from('tasks')
         .select(`
@@ -60,24 +45,19 @@ export class LegacyTaskService {
 
       // フィルタリング
       if (filters) {
-        if (filters.status && filters.status.length > 0) {
-          query = query.in('status', filters.status)
+        if (filters.status) {
+          query = query.eq('status', filters.status)
         }
-        if (filters.priority && filters.priority.length > 0) {
-          query = query.in('priority', filters.priority)
+        if (filters.priority) {
+          query = query.eq('priority', filters.priority)
         }
-        if (filters.category_id && filters.category_id.length > 0) {
-          query = query.in('category_id', filters.category_id)
-        }
-        if (filters.due_date_from) {
-          query = query.gte('due_date', filters.due_date_from)
-        }
-        if (filters.due_date_to) {
-          query = query.lte('due_date', filters.due_date_to)
+        if (filters.category_id) {
+          query = query.eq('category_id', filters.category_id)
         }
         if (filters.search) {
           query = query.or(`title.ilike.%${filters.search}%,description.ilike.%${filters.search}%`)
         }
+        // 日付フィルターは必要に応じて後で追加
       }
 
       // ソート
@@ -89,406 +69,271 @@ export class LegacyTaskService {
 
       // ページネーション
       if (limit) {
-        query = query.limit(limit)
-      }
-      if (offset) {
-        query = query.range(offset, offset + (limit || 10) - 1)
+        const start = offset || 0
+        query = query.range(start, start + limit - 1)
       }
 
       const { data, error } = await query
 
-      if (error) {
-        logger.error('Failed to fetch tasks', error)
-        throw new Error('タスクの取得に失敗しました')
-      }
+      if (error) throw error
 
       return data || []
     } catch (error) {
-      logger.error('Error in getTasks', error)
-      throw error
+      logger.error('Failed to get tasks', { error, userId })
+      throw new Error('タスクの取得に失敗しました')
     }
   }
 
-  async getTaskById(userId: string, taskId: string): Promise<TaskWithCategory | null> {
+  /**
+   * タスクを作成
+   */
+  async createTask(userId: string, taskData: TaskInsert): Promise<Task> {
     try {
-      const supabase = this.getSupabase()
+      logger.debug('Creating task', { userId, taskData })
+
+      const { data, error } = await supabase
+        .from('tasks')
+        .insert({
+          ...taskData,
+          user_id: userId
+        })
+        .select()
+        .single()
+
+      if (error) throw error
+
+      logger.info('Task created successfully', { taskId: data.id, title: data.title })
+      return data
+    } catch (error) {
+      logger.error('Failed to create task', { error, userId, taskData })
+      throw new Error('タスクの作成に失敗しました')
+    }
+  }
+
+  /**
+   * タスクを更新
+   */
+  async updateTask(userId: string, taskId: string, updates: TaskUpdate): Promise<Task> {
+    try {
+      logger.debug('Updating task', { userId, taskId, updates })
+
+      const { data, error } = await supabase
+        .from('tasks')
+        .update({
+          ...updates,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', taskId)
+        .eq('user_id', userId)
+        .select()
+        .single()
+
+      if (error) throw error
+
+      logger.info('Task updated successfully', { taskId: data.id })
+      return data
+    } catch (error) {
+      logger.error('Failed to update task', { error, userId, taskId })
+      throw new Error('タスクの更新に失敗しました')
+    }
+  }
+
+  /**
+   * タスクを削除
+   */
+  async deleteTask(userId: string, taskId: string): Promise<void> {
+    try {
+      logger.debug('Deleting task', { userId, taskId })
+
+      const { error } = await supabase
+        .from('tasks')
+        .delete()
+        .eq('id', taskId)
+        .eq('user_id', userId)
+
+      if (error) throw error
+
+      logger.info('Task deleted successfully', { taskId })
+    } catch (error) {
+      logger.error('Failed to delete task', { error, userId, taskId })
+      throw new Error('タスクの削除に失敗しました')
+    }
+  }
+
+  /**
+   * タスクを取得
+   */
+  async getTask(userId: string, taskId: string): Promise<TaskWithCategory | null> {
+    try {
       const { data, error } = await supabase
         .from('tasks')
         .select(`
           *,
           category:categories(*)
         `)
-        .eq('user_id', userId)
         .eq('id', taskId)
+        .eq('user_id', userId)
         .single()
 
-      if (error) {
-        if (error.code === 'PGRST116') {
-          return null // タスクが見つからない
-        }
-        logger.error('Failed to fetch task by ID', error)
-        throw new Error('タスクの取得に失敗しました')
-      }
+      if (error && error.code !== 'PGRST116') throw error
 
-      return data
+      return data || null
     } catch (error) {
-      logger.error('Error in getTaskById', error)
-      throw error
+      logger.error('Failed to get task', { error, userId, taskId })
+      return null
     }
   }
 
-  async createTask(userId: string, taskData: Omit<TaskInsert, 'user_id'>): Promise<Task> {
-    try {
-      // バリデーション
-      this.validateTaskData(taskData)
-
-      const supabase = this.getSupabase()
-      const { data, error } = await supabase
-        .from('tasks')
-        .insert({
-          ...taskData,
-          user_id: userId,
-        })
-        .select()
-        .single()
-
-      if (error) {
-        logger.error('Failed to create task', error)
-        throw new Error('タスクの作成に失敗しました')
-      }
-
-      logger.info('Task created successfully', { taskId: data.id, userId })
-      
-      // 新しいアーキテクチャのイベント発行
-      try {
-        await publishTaskCreated(data as TaskWithCategory, userId)
-      } catch (eventError) {
-        logger.warn('Failed to publish task created event', { taskId: data.id, eventError })
-      }
-      
-      return data
-    } catch (error) {
-      logger.error('Error in createTask', error)
-      throw error
-    }
+  /**
+   * タスクをIDで取得（後方互換性）
+   */
+  async getTaskById(userId: string, taskId: string): Promise<TaskWithCategory | null> {
+    return this.getTask(userId, taskId)
   }
 
-  async updateTask(
-    userId: string,
-    taskId: string,
-    updates: Omit<TaskUpdate, 'user_id' | 'id'>
-  ): Promise<Task> {
-    try {
-      // バリデーション
-      this.validateTaskData(updates)
-
-      // 完了状態の変更時に completed_at を自動設定
-      if (updates.status === 'completed') {
-        updates.completed_at = new Date().toISOString()
-      } else if (updates.status) {
-        updates.completed_at = null
-      }
-
-      const supabase = this.getSupabase()
-      const { data, error } = await supabase
-        .from('tasks')
-        .update(updates)
-        .eq('user_id', userId)
-        .eq('id', taskId)
-        .select()
-        .single()
-
-      if (error) {
-        logger.error('Failed to update task', error)
-        throw new Error('タスクの更新に失敗しました')
-      }
-
-      logger.info('Task updated successfully', { taskId, userId })
-      
-      // 新しいアーキテクチャのイベント発行
-      try {
-        // 前の状態を取得するため、ここでは簡略化
-        await publishTaskUpdated(data as TaskWithCategory, data as TaskWithCategory, userId)
-      } catch (eventError) {
-        logger.warn('Failed to publish task updated event', { taskId, eventError })
-      }
-      
-      return data
-    } catch (error) {
-      logger.error('Error in updateTask', error)
-      throw error
-    }
-  }
-
-  async deleteTask(userId: string, taskId: string): Promise<void> {
-    try {
-      const supabase = this.getSupabase()
-      const { error } = await supabase
-        .from('tasks')
-        .delete()
-        .eq('user_id', userId)
-        .eq('id', taskId)
-
-      if (error) {
-        logger.error('Failed to delete task', error)
-        throw new Error('タスクの削除に失敗しました')
-      }
-
-      logger.info('Task deleted successfully', { taskId, userId })
-      
-      // 新しいアーキテクチャのイベント発行
-      try {
-        // 削除前のタスクデータが必要だが、既に削除されているため
-        // 実際の実装では削除前に取得する必要がある
-        await publishTaskDeleted(taskId, {} as TaskWithCategory, userId)
-      } catch (eventError) {
-        logger.warn('Failed to publish task deleted event', { taskId, eventError })
-      }
-    } catch (error) {
-      logger.error('Error in deleteTask', error)
-      throw error
-    }
-  }
-
+  /**
+   * タスク統計を取得
+   */
   async getTaskStats(userId: string): Promise<TaskStats> {
     try {
-      const supabase = this.getSupabase()
       const { data, error } = await supabase
-        .rpc('get_task_stats', { p_user_id: userId })
+        .from('tasks')
+        .select('status, priority')
+        .eq('user_id', userId)
 
-      if (error) {
-        logger.error('Failed to get task stats', error)
-        throw new Error('タスク統計の取得に失敗しました')
+      if (error) throw error
+
+      const tasks = data || []
+      
+      const total = tasks.length
+      const completed = tasks.filter(t => t.status === 'completed').length
+      const inProgress = tasks.filter(t => t.status === 'in_progress').length
+      const pending = tasks.filter(t => t.status === 'pending').length
+      
+      return {
+        total_tasks: total,
+        completed_tasks: completed,
+        pending_tasks: pending,
+        in_progress_tasks: inProgress,
+        overdue_tasks: 0, // TODO: 実装
+        completion_rate: total > 0 ? Math.round((completed / total) * 100) : 0
       }
-
-      return data[0] || {
+    } catch (error) {
+      logger.error('Failed to get task stats', { error, userId })
+      return {
         total_tasks: 0,
         completed_tasks: 0,
         pending_tasks: 0,
         in_progress_tasks: 0,
         overdue_tasks: 0,
-        completion_rate: 0,
+        completion_rate: 0
       }
-    } catch (error) {
-      logger.error('Error in getTaskStats', error)
-      throw error
     }
   }
 
-  // カテゴリ関連のメソッド
+  /**
+   * カテゴリ一覧を取得
+   */
   async getCategories(userId: string): Promise<Category[]> {
     try {
-      const supabase = this.getSupabase()
       const { data, error } = await supabase
         .from('categories')
         .select('*')
         .eq('user_id', userId)
-        .eq('is_active', true)
-        .order('sort_order', { ascending: true })
+        .order('name')
 
-      if (error) {
-        logger.error('Failed to fetch categories', error)
-        throw new Error('カテゴリの取得に失敗しました')
-      }
+      if (error) throw error
 
       return data || []
     } catch (error) {
-      logger.error('Error in getCategories', error)
-      throw error
+      logger.error('Failed to get categories', { error, userId })
+      return []
     }
   }
 
-  async createCategory(
-    userId: string,
-    categoryData: Omit<CategoryInsert, 'user_id'>
-  ): Promise<Category> {
+  /**
+   * カテゴリを作成
+   */
+  async createCategory(userId: string, categoryData: CategoryInsert): Promise<Category> {
     try {
-      // バリデーション
-      this.validateCategoryData(categoryData)
-
-      const supabase = this.getSupabase()
       const { data, error } = await supabase
         .from('categories')
         .insert({
           ...categoryData,
-          user_id: userId,
+          user_id: userId
         })
         .select()
         .single()
 
-      if (error) {
-        logger.error('Failed to create category', error)
-        throw new Error('カテゴリの作成に失敗しました')
-      }
+      if (error) throw error
 
-      logger.info('Category created successfully', { categoryId: data.id, userId })
       return data
     } catch (error) {
-      logger.error('Error in createCategory', error)
-      throw error
+      logger.error('Failed to create category', { error, userId, categoryData })
+      throw new Error('カテゴリの作成に失敗しました')
     }
   }
 
-  async updateCategory(
-    userId: string,
-    categoryId: string,
-    updates: Omit<CategoryUpdate, 'user_id' | 'id'>
-  ): Promise<Category> {
+  /**
+   * カテゴリを更新
+   */
+  async updateCategory(userId: string, categoryId: string, updates: CategoryUpdate): Promise<Category> {
     try {
-      // バリデーション
-      this.validateCategoryData(updates)
-
-      const supabase = this.getSupabase()
       const { data, error } = await supabase
         .from('categories')
-        .update(updates)
-        .eq('user_id', userId)
+        .update({
+          ...updates,
+          updated_at: new Date().toISOString()
+        })
         .eq('id', categoryId)
+        .eq('user_id', userId)
         .select()
         .single()
 
-      if (error) {
-        logger.error('Failed to update category', error)
-        throw new Error('カテゴリの更新に失敗しました')
-      }
+      if (error) throw error
 
-      logger.info('Category updated successfully', { categoryId, userId })
       return data
     } catch (error) {
-      logger.error('Error in updateCategory', error)
-      throw error
+      logger.error('Failed to update category', { error, userId, categoryId })
+      throw new Error('カテゴリの更新に失敗しました')
     }
   }
 
+  /**
+   * カテゴリを削除
+   */
   async deleteCategory(userId: string, categoryId: string): Promise<void> {
     try {
-      const supabase = this.getSupabase()
       const { error } = await supabase
         .from('categories')
         .delete()
-        .eq('user_id', userId)
         .eq('id', categoryId)
+        .eq('user_id', userId)
 
-      if (error) {
-        logger.error('Failed to delete category', error)
-        throw new Error('カテゴリの削除に失敗しました')
-      }
-
-      logger.info('Category deleted successfully', { categoryId, userId })
+      if (error) throw error
     } catch (error) {
-      logger.error('Error in deleteCategory', error)
-      throw error
-    }
-  }
-
-  // バリデーション メソッド
-  private validateTaskData(data: Partial<TaskInsert | TaskUpdate>): void {
-    if (data.title !== undefined) {
-      if (!data.title.trim()) {
-        throw new Error('タスクのタイトルは必須です')
-      }
-      if (data.title.length > TASK_CONSTRAINTS.TITLE_MAX_LENGTH) {
-        throw new Error(`タスクのタイトルは${TASK_CONSTRAINTS.TITLE_MAX_LENGTH}文字以内で入力してください`)
-      }
-    }
-
-    if (data.description !== undefined && data.description && data.description.length > TASK_CONSTRAINTS.DESCRIPTION_MAX_LENGTH) {
-      throw new Error(`タスクの説明は${TASK_CONSTRAINTS.DESCRIPTION_MAX_LENGTH}文字以内で入力してください`)
-    }
-
-    if (data.notes !== undefined && data.notes && data.notes.length > TASK_CONSTRAINTS.NOTES_MAX_LENGTH) {
-      throw new Error(`タスクのメモは${TASK_CONSTRAINTS.NOTES_MAX_LENGTH}文字以内で入力してください`)
-    }
-
-    if (data.tags !== undefined && data.tags) {
-      if (data.tags.length > TASK_CONSTRAINTS.TAGS_MAX_COUNT) {
-        throw new Error(`タグは${TASK_CONSTRAINTS.TAGS_MAX_COUNT}個以内で設定してください`)
-      }
-      for (const tag of data.tags) {
-        if (tag.length > TASK_CONSTRAINTS.TAG_MAX_LENGTH) {
-          throw new Error(`タグは${TASK_CONSTRAINTS.TAG_MAX_LENGTH}文字以内で入力してください`)
-        }
-      }
-    }
-
-    if (data.estimated_minutes !== undefined && data.estimated_minutes < 0) {
-      throw new Error('見積もり時間は0以上で入力してください')
-    }
-
-    if (data.actual_minutes !== undefined && data.actual_minutes < 0) {
-      throw new Error('実際の時間は0以上で入力してください')
-    }
-  }
-
-  private validateCategoryData(data: Partial<CategoryInsert | CategoryUpdate>): void {
-    if (data.name !== undefined) {
-      if (!data.name.trim()) {
-        throw new Error('カテゴリ名は必須です')
-      }
-      if (data.name.length > CATEGORY_CONSTRAINTS.NAME_MAX_LENGTH) {
-        throw new Error(`カテゴリ名は${CATEGORY_CONSTRAINTS.NAME_MAX_LENGTH}文字以内で入力してください`)
-      }
-    }
-
-    if (data.description !== undefined && data.description && data.description.length > CATEGORY_CONSTRAINTS.DESCRIPTION_MAX_LENGTH) {
-      throw new Error(`カテゴリの説明は${CATEGORY_CONSTRAINTS.DESCRIPTION_MAX_LENGTH}文字以内で入力してください`)
+      logger.error('Failed to delete category', { error, userId, categoryId })
+      throw new Error('カテゴリの削除に失敗しました')
     }
   }
 }
 
-// レガシーサポート用のシングルトンインスタンス
-// @deprecated 新しいアーキテクチャのサービスを使用してください
-export const taskService = new LegacyTaskService()
+// シングルトンインスタンス
+export const taskService = new TaskService()
 
-/**
- * 新しいアーキテクチャ対応のタスクサービス統合ラッパー
- * 依存性注入コンテナから適切なサービスを取得
- */
-export class TaskServiceFacade {
-  async getTasks(
-    userId: string,
-    filters?: TaskFilters,
-    sort?: TaskSortOptions,
-    limit?: number,
-    offset?: number
-  ): Promise<TaskWithCategory[]> {
-    return withServiceScope(async (scope) => {
-      const taskService = await scope.get(SERVICE_TOKENS.TASK_SERVICE)
-      // TODO: 新しいアーキテクチャのメソッドを呼び出し
-      // 現在はレガシーサービスにフォールバック
-      return this.legacyTaskService.getTasks(userId, filters, sort, limit, offset)
-    })
-  }
-
-  async createTask(userId: string, taskData: Omit<TaskInsert, 'user_id'>): Promise<Task> {
-    return withServiceScope(async (scope) => {
-      const taskService = await scope.get(SERVICE_TOKENS.TASK_SERVICE)
-      return taskService.createTask(userId, taskData)
-    })
-  }
-
-  async updateTask(
-    userId: string,
-    taskId: string,
-    updates: Omit<TaskUpdate, 'user_id' | 'id'>
-  ): Promise<Task> {
-    return withServiceScope(async (scope) => {
-      const taskService = await scope.get(SERVICE_TOKENS.TASK_SERVICE)
-      return taskService.updateTask(userId, taskId, updates)
-    })
-  }
-
-  async deleteTask(userId: string, taskId: string): Promise<void> {
-    return withServiceScope(async (scope) => {
-      const taskService = await scope.get(SERVICE_TOKENS.TASK_SERVICE)
-      return taskService.deleteTask(userId, taskId)
-    })
-  }
-
-  private get legacyTaskService() {
-    return taskService
-  }
+// レガシー関数（後方互換性のため）
+export async function getUserTasks(userId: string): Promise<TaskWithCategory[]> {
+  return taskService.getTasks(userId)
 }
 
-// 新しいアーキテクチャ対応のインスタンス
-export const modernTaskService = new TaskServiceFacade()
+export async function createUserTask(userId: string, taskData: TaskInsert): Promise<Task> {
+  return taskService.createTask(userId, taskData)
+}
+
+export async function updateUserTask(userId: string, taskId: string, updates: TaskUpdate): Promise<Task> {
+  return taskService.updateTask(userId, taskId, updates)
+}
+
+export async function deleteUserTask(userId: string, taskId: string): Promise<void> {
+  return taskService.deleteTask(userId, taskId)
+}
