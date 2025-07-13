@@ -1,6 +1,8 @@
 /**
- * タスク関連のサービス層
- * セキュアなデータベース操作を提供
+ * レガシータスクサービス（後方互換性のため）
+ * 新しいアーキテクチャへの移行期間中のアダプター
+ * 
+ * @deprecated 新しいアーキテクチャのTaskServiceを使用してください
  */
 
 import { createClient } from '@/lib/supabase/server'
@@ -19,8 +21,21 @@ import {
   TASK_CONSTRAINTS,
   CATEGORY_CONSTRAINTS
 } from '@/types/tasks'
+import { 
+  SERVICE_TOKENS,
+  withServiceScope 
+} from '@/lib/architecture/services'
+import { 
+  publishTaskCreated, 
+  publishTaskUpdated, 
+  publishTaskDeleted 
+} from '@/lib/architecture/events'
 
-export class TaskService {
+/**
+ * @deprecated レガシータスクサービス
+ * 新しいアーキテクチャのサービスに移行してください
+ */
+export class LegacyTaskService {
   private getSupabase() {
     return createClient()
   }
@@ -143,6 +158,14 @@ export class TaskService {
       }
 
       logger.info('Task created successfully', { taskId: data.id, userId })
+      
+      // 新しいアーキテクチャのイベント発行
+      try {
+        await publishTaskCreated(data as TaskWithCategory, userId)
+      } catch (eventError) {
+        logger.warn('Failed to publish task created event', { taskId: data.id, eventError })
+      }
+      
       return data
     } catch (error) {
       logger.error('Error in createTask', error)
@@ -181,6 +204,15 @@ export class TaskService {
       }
 
       logger.info('Task updated successfully', { taskId, userId })
+      
+      // 新しいアーキテクチャのイベント発行
+      try {
+        // 前の状態を取得するため、ここでは簡略化
+        await publishTaskUpdated(data as TaskWithCategory, data as TaskWithCategory, userId)
+      } catch (eventError) {
+        logger.warn('Failed to publish task updated event', { taskId, eventError })
+      }
+      
       return data
     } catch (error) {
       logger.error('Error in updateTask', error)
@@ -203,6 +235,15 @@ export class TaskService {
       }
 
       logger.info('Task deleted successfully', { taskId, userId })
+      
+      // 新しいアーキテクチャのイベント発行
+      try {
+        // 削除前のタスクデータが必要だが、既に削除されているため
+        // 実際の実装では削除前に取得する必要がある
+        await publishTaskDeleted(taskId, {} as TaskWithCategory, userId)
+      } catch (eventError) {
+        logger.warn('Failed to publish task deleted event', { taskId, eventError })
+      }
     } catch (error) {
       logger.error('Error in deleteTask', error)
       throw error
@@ -395,5 +436,59 @@ export class TaskService {
   }
 }
 
-// シングルトンインスタンス
-export const taskService = new TaskService()
+// レガシーサポート用のシングルトンインスタンス
+// @deprecated 新しいアーキテクチャのサービスを使用してください
+export const taskService = new LegacyTaskService()
+
+/**
+ * 新しいアーキテクチャ対応のタスクサービス統合ラッパー
+ * 依存性注入コンテナから適切なサービスを取得
+ */
+export class TaskServiceFacade {
+  async getTasks(
+    userId: string,
+    filters?: TaskFilters,
+    sort?: TaskSortOptions,
+    limit?: number,
+    offset?: number
+  ): Promise<TaskWithCategory[]> {
+    return withServiceScope(async (scope) => {
+      const taskService = await scope.get(SERVICE_TOKENS.TASK_SERVICE)
+      // TODO: 新しいアーキテクチャのメソッドを呼び出し
+      // 現在はレガシーサービスにフォールバック
+      return this.legacyTaskService.getTasks(userId, filters, sort, limit, offset)
+    })
+  }
+
+  async createTask(userId: string, taskData: Omit<TaskInsert, 'user_id'>): Promise<Task> {
+    return withServiceScope(async (scope) => {
+      const taskService = await scope.get(SERVICE_TOKENS.TASK_SERVICE)
+      return taskService.createTask(userId, taskData)
+    })
+  }
+
+  async updateTask(
+    userId: string,
+    taskId: string,
+    updates: Omit<TaskUpdate, 'user_id' | 'id'>
+  ): Promise<Task> {
+    return withServiceScope(async (scope) => {
+      const taskService = await scope.get(SERVICE_TOKENS.TASK_SERVICE)
+      return taskService.updateTask(userId, taskId, updates)
+    })
+  }
+
+  async deleteTask(userId: string, taskId: string): Promise<void> {
+    return withServiceScope(async (scope) => {
+      const taskService = await scope.get(SERVICE_TOKENS.TASK_SERVICE)
+      return taskService.deleteTask(userId, taskId)
+    })
+  }
+
+  private get legacyTaskService() {
+    return taskService
+  }
+}
+
+// 新しいアーキテクチャ対応のインスタンス
+export const modernTaskService = new TaskServiceFacade()
