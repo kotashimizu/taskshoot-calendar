@@ -11,6 +11,8 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { TaskFormData, TaskFilters, TaskSortOptions } from '@/types/tasks';
 import { useToast } from '@/hooks/use-toast';
+import { CalendarView } from '@/components/calendar/calendar-view';
+import { CalendarErrorWrapper } from '@/components/calendar/calendar-error-boundary';
 
 export default function HomePage(): JSX.Element {
   const { user, loading: authLoading } = useAuthContext();
@@ -125,13 +127,11 @@ export default function HomePage(): JSX.Element {
               <div className="rounded-lg border bg-white p-6 shadow-sm">
                 <h3 className="mb-2 text-lg font-semibold">カレンダー表示</h3>
                 <p className="text-sm text-gray-600 mb-4">
-                  直感的なカレンダーUI（開発中）
+                  直感的なカレンダーUIでタスクを視覚的に管理
                 </p>
                 <Button 
                   onClick={() => setActiveTab('calendar')}
-                  variant="outline"
                   className="w-full"
-                  disabled
                 >
                   カレンダーを開く
                 </Button>
@@ -219,17 +219,62 @@ export default function HomePage(): JSX.Element {
           </TabsContent>
 
           <TabsContent value="calendar" className="mt-6">
-            <div className="text-center py-12">
-              <Calendar className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                カレンダー機能
-              </h3>
-              <p className="text-gray-600 mb-4">
-                カレンダー表示機能は現在開発中です。Phase 3で実装予定です。
-              </p>
-              <Button variant="outline" disabled>
-                開発中
-              </Button>
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-bold text-gray-900">カレンダー</h2>
+                <div className="text-sm text-gray-600">
+                  {tasks.length} 件のタスクを表示中
+                </div>
+              </div>
+              
+              <CalendarErrorWrapper>
+                <CalendarView
+                  tasks={tasks}
+                  loading={tasksLoading}
+                  error={null}
+                  onEventSelect={(event) => {
+                    // イベント選択時の処理（詳細モーダルで処理）
+                    // イベント選択はカレンダーコンポーネント内で処理
+                    void event
+                  }}
+                  onEventCreate={(eventData) => {
+                    // カレンダーからのタスク作成（作成モーダルで処理）
+                    // イベント作成はカレンダーコンポーネント内で処理
+                    void eventData
+                  }}
+                  onTaskCreate={handleCreateTask}
+                  onTaskUpdate={async (taskId, data) => {
+                    const result = await updateTask(taskId, data)
+                    if (result) {
+                      toast({
+                        title: "更新完了",
+                        description: "タスクが更新されました",
+                      })
+                    }
+                  }}
+                  onTaskDelete={async (taskId) => {
+                    const result = await deleteTask(taskId)
+                    if (result) {
+                      toast({
+                        title: "削除完了",
+                        description: "タスクが削除されました",
+                      })
+                    }
+                  }}
+                  settings={{
+                    defaultView: 'month',
+                    showWeekends: true,
+                    startOfWeek: 1, // 月曜始まり
+                  }}
+                  filters={{
+                    priorities: filters.priority,
+                    statuses: filters.status,
+                    categories: filters.category_id,
+                    showCompleted: !filters.status?.includes('completed'),
+                  }}
+                  className="bg-white rounded-lg shadow-sm border"
+                />
+              </CalendarErrorWrapper>
             </div>
           </TabsContent>
         </Tabs>

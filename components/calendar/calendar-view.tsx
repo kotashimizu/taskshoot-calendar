@@ -7,7 +7,10 @@ import { ja } from 'date-fns/locale'
 import { Card } from '@/components/ui/card'
 import { CalendarEvent, CalendarViewState, CalendarComponentProps } from '@/types/calendar'
 import { getEventDisplayProps, taskToCalendarEvent } from '@/lib/calendar/calendar-utils'
-import { TaskWithCategory } from '@/types/tasks'
+import { TaskWithCategory, TaskFormData } from '@/types/tasks'
+import { TaskDetailModal } from './task-detail-modal'
+import { TaskCreateModal } from './task-create-modal'
+import { CalendarToolbar } from './calendar-toolbar'
 
 // react-big-calendarのスタイルをインポート
 import 'react-big-calendar/lib/css/react-big-calendar.css'
@@ -27,6 +30,9 @@ const localizer = dateFnsLocalizer({
 
 interface CalendarViewProps extends Omit<CalendarComponentProps, 'events'> {
   tasks: TaskWithCategory[]
+  onTaskUpdate?: (taskId: string, data: Partial<TaskWithCategory>) => Promise<void>
+  onTaskDelete?: (taskId: string) => Promise<void>
+  onTaskCreate?: (data: TaskFormData) => Promise<void>
 }
 
 /* eslint-disable no-unused-vars */
@@ -43,12 +49,28 @@ export function CalendarView({
   settings,
   filters,
   className = '',
+  onTaskUpdate,
+  onTaskDelete,
+  onTaskCreate,
 }: CalendarViewProps) {
   // ビュー状態管理
   const [viewState, setViewState] = useState<CalendarViewState>({
     date: new Date(),
     view: (settings?.defaultView as View) || 'month',
   })
+
+  // タスク詳細モーダル状態
+  const [selectedTask, setSelectedTask] = useState<TaskWithCategory | null>(null)
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false)
+  
+  // タスク作成モーダル状態
+  const [createModalData, setCreateModalData] = useState<{
+    date: Date
+    allDay: boolean
+    startTime?: Date
+    endTime?: Date
+  } | null>(null)
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
 
   // タスクをカレンダーイベントに変換（メモ化）
   const events = useMemo(() => {
@@ -95,21 +117,32 @@ export function CalendarView({
 
   // イベント選択ハンドラー
   const handleSelectEvent = useCallback((event: Event) => {
-    if (onEventSelect && 'resource' in event) {
-      onEventSelect(event as CalendarEvent)
+    if ('resource' in event) {
+      const calendarEvent = event as CalendarEvent
+      setSelectedTask(calendarEvent.resource.task)
+      setIsDetailModalOpen(true)
+      onEventSelect?.(calendarEvent)
     }
   }, [onEventSelect])
 
   // スロット選択ハンドラー（カレンダーの空白部分クリック）
   const handleSelectSlot = useCallback((slotInfo: { start: Date; end: Date; slots: Date[] }) => {
-    if (onEventCreate) {
-      onEventCreate({
-        date: slotInfo.start,
-        allDay: slotInfo.slots.length > 1,
-        startTime: slotInfo.start,
-        endTime: slotInfo.end,
-      })
-    }
+    // タスク作成モーダルを開く
+    setCreateModalData({
+      date: slotInfo.start,
+      allDay: slotInfo.slots.length > 1,
+      startTime: slotInfo.start,
+      endTime: slotInfo.end,
+    })
+    setIsCreateModalOpen(true)
+    
+    // 既存のコールバックも実行
+    onEventCreate?.({
+      date: slotInfo.start,
+      allDay: slotInfo.slots.length > 1,
+      startTime: slotInfo.start,
+      endTime: slotInfo.end,
+    })
   }, [onEventCreate])
 
   // ナビゲーションハンドラー
@@ -138,59 +171,14 @@ export function CalendarView({
   // - handleEventResize: リサイズによる期間変更
   // - onEventEdit: インライン編集機能
 
-  // カスタムツールバーコンポーネント
+  // カスタムツールバーコンポーネント（最適化されたメモ化）
   const CustomToolbar = useCallback(({ label, onNavigate, onView }: any) => (
-    <div className="rbc-toolbar">
-      <span className="rbc-btn-group">
-        <button
-          type="button"
-          onClick={() => onNavigate('PREV')}
-          className="rbc-btn"
-          aria-label="前へ"
-        >
-          ‹
-        </button>
-        <button
-          type="button"
-          onClick={() => onNavigate('TODAY')}
-          className="rbc-btn"
-        >
-          今日
-        </button>
-        <button
-          type="button"
-          onClick={() => onNavigate('NEXT')}
-          className="rbc-btn"
-          aria-label="次へ"
-        >
-        ›
-        </button>
-      </span>
-      <span className="rbc-toolbar-label">{label}</span>
-      <span className="rbc-btn-group">
-        <button
-          type="button"
-          className={viewState.view === 'month' ? 'rbc-btn rbc-active' : 'rbc-btn'}
-          onClick={() => onView('month')}
-        >
-          月
-        </button>
-        <button
-          type="button"
-          className={viewState.view === 'week' ? 'rbc-btn rbc-active' : 'rbc-btn'}
-          onClick={() => onView('week')}
-        >
-          週
-        </button>
-        <button
-          type="button"
-          className={viewState.view === 'day' ? 'rbc-btn rbc-active' : 'rbc-btn'}
-          onClick={() => onView('day')}
-        >
-          日
-        </button>
-      </span>
-    </div>
+    <CalendarToolbar
+      label={label}
+      onNavigate={onNavigate}
+      onView={onView}
+      currentView={viewState.view}
+    />
   ), [viewState.view])
 
   if (error) {
@@ -272,6 +260,46 @@ export function CalendarView({
           </div>
         </div>
       )}
+
+      {/* タスク詳細モーダル */}
+      <TaskDetailModal
+        task={selectedTask}
+        isOpen={isDetailModalOpen}
+        onClose={() => {
+          setIsDetailModalOpen(false)
+          setSelectedTask(null)
+        }}
+        onEdit={(task) => {
+          // TODO: タスク編集フォームを開く実装
+          // 将来的にタスク編集モーダルまたはフォームを実装
+          void task
+        }}
+        onDelete={async (taskId) => {
+          if (onTaskDelete) {
+            await onTaskDelete(taskId)
+          }
+        }}
+        onStatusChange={async (taskId, status) => {
+          if (onTaskUpdate) {
+            await onTaskUpdate(taskId, { status })
+          }
+        }}
+      />
+
+      {/* タスク作成モーダル */}
+      <TaskCreateModal
+        isOpen={isCreateModalOpen}
+        onClose={() => {
+          setIsCreateModalOpen(false)
+          setCreateModalData(null)
+        }}
+        onSubmit={async (data) => {
+          if (onTaskCreate) {
+            await onTaskCreate(data)
+          }
+        }}
+        initialData={createModalData || undefined}
+      />
     </Card>
   )
 }
