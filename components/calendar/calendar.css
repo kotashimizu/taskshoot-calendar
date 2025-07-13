@@ -1,0 +1,161 @@
+/* TaskShoot Calendar カスタムスタイル */
+
+/* カレンダーイベントのアニメーション */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+/* カレンダーコンテナの基本スタイル */
+.calendar-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  font-family: 'Noto Sans JP', sans-serif;
+}
+
+/* イベントの基本スタイル */
+.calendar-event {
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-size: 12px;
+  line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: all 0.2s ease-in-out;
+  cursor: pointer;
+}
+
+.calendar-event:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  z-index: 10;
+}
+
+/* 優先度別スタイル */
+.calendar-event.priority-urgent {
+  font-weight: bold;
+  border-width: 3px;
+}
+
+.calendar-event.priority-high {
+  border-width: 2px;
+}
+
+/* ステータス別スタイル */
+.calendar-event.status-completed {
+  opacity: 0.7;
+  text-decoration: line-through;
+}
+
+.calendar-event.status-cancelled {
+  opacity: 0.6;
+  text-decoration: line-through;
+}
+
+/* 期限超過イベント */
+.calendar-event.overdue {
+  animation: pulse 2s infinite;
+  border-style: dashed;
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 768px) {
+  .calendar-event {
+    font-size: 10px;
+    padding: 1px 4px;
+  }
+  
+  .rbc-toolbar {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .rbc-toolbar-label {
+    font-size: 16px;
+    margin: 0;
+  }
+  
+  .rbc-btn-group {
+    display: flex;
+    gap: 4px;
+  }
+}
+
+/* ダークテーマ対応（将来の実装用） */
+@media (prefers-color-scheme: dark) {
+  .calendar-container {
+    color-scheme: dark;
+  }
+  
+  .calendar-event {
+    border-color: rgba(255, 255, 255, 0.3);
+  }
+}
+
+/* カレンダーグリッドの改善 */
+.rbc-month-view .rbc-date-cell {
+  padding: 4px;
+  min-height: 80px;
+}
+
+.rbc-week-view .rbc-time-slot,
+.rbc-day-view .rbc-time-slot {
+  border-bottom: 1px solid #e0e0e0;
+}
+
+/* ツールバーのスタイル改善 */
+.rbc-toolbar {
+  margin-bottom: 16px;
+  padding: 0 8px;
+}
+
+.rbc-btn {
+  padding: 6px 12px;
+  border: 1px solid #d1d5db;
+  background: white;
+  border-radius: 6px;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.rbc-btn:hover {
+  background: #f3f4f6;
+  border-color: #9ca3af;
+}
+
+.rbc-btn.rbc-active {
+  background: #3b82f6;
+  color: white;
+  border-color: #3b82f6;
+}
+
+/* アクセシビリティ向上 */
+.calendar-event:focus {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+.rbc-btn:focus {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+/* 印刷対応 */
+@media print {
+  .calendar-container {
+    -webkit-print-color-adjust: exact;
+    color-adjust: exact;
+  }
+  
+  .calendar-event {
+    border: 1px solid #000 !important;
+    background: white !important;
+    color: black !important;
+  }
+}
