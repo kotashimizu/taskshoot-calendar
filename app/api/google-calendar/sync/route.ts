@@ -11,12 +11,12 @@ import {
 import { SyncError } from '@/types/google-calendar'
 import { TaskWithCategory } from '@/types/tasks'
 
-// 同期リクエストのバリデーションスキーマ
+// 同期リクエストのバリデーションスキーマ - セキュリティ強化
 const SyncRequestSchema = z.object({
   direction: z.enum(['import', 'export', 'bidirectional']).optional().default('bidirectional'),
-  calendar_ids: z.array(z.string()).optional(),
+  calendar_ids: z.array(z.string().regex(/^[a-zA-Z0-9@._-]+$/, 'Invalid calendar ID format')).max(10, 'Too many calendars').optional(),
   dry_run: z.boolean().optional().default(false),
-})
+}).strict() // 追加プロパティを拒否
 
 type SyncRequest = z.infer<typeof SyncRequestSchema>
 

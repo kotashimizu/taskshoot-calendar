@@ -48,11 +48,20 @@ export class GoogleCalendarClient {
    * 認証コードからトークンを取得
    */
   async getTokenFromCode(code: string): Promise<GoogleAuthTokens> {
+    if (!code || typeof code !== 'string' || code.length > 1000) {
+      throw new Error('Invalid authorization code')
+    }
+
     try {
       const { tokens } = await this.oauth2Client.getToken(code)
       
-      if (!tokens.access_token) {
-        throw new Error('Failed to obtain access token')
+      if (!tokens.access_token || typeof tokens.access_token !== 'string') {
+        throw new Error('Failed to obtain valid access token')
+      }
+
+      // トークンの基本的な形式検証
+      if (tokens.access_token.length < 10) {
+        throw new Error('Invalid access token format')
       }
 
       return {

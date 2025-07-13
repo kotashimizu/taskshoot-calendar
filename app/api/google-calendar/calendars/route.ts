@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { getGoogleCredentialsFromEnv, createGoogleCalendarClient } from '@/lib/google-calendar/client'
+import { googleCalendarCache, getCalendarListCacheKey } from '@/lib/cache'
 
 /**
  * Google Calendarのカレンダー一覧を取得
@@ -75,6 +76,14 @@ export async function GET() {
         }
       }
 
+      // キャッシュをチェック
+      const cacheKey = getCalendarListCacheKey(user.id)
+      const cachedCalendars = googleCalendarCache.get(cacheKey)
+      
+      if (cachedCalendars) {
+        return NextResponse.json(cachedCalendars)
+      }
+
       // カレンダー一覧を取得
       const calendarsResponse = await client.getCalendarList()
       
@@ -106,11 +115,16 @@ export async function GET() {
           return (a.summary || '').localeCompare(b.summary || '')
         })
 
-      return NextResponse.json({
+      const response = {
         calendars,
         total: calendars.length,
         message: 'Calendars fetched successfully',
-      })
+      }
+
+      // 結果をキャッシュ（10分間）
+      googleCalendarCache.set(cacheKey, response, 10 * 60 * 1000)
+
+      return NextResponse.json(response)
 
     } catch (apiError) {
       console.error('Google Calendar API error:', apiError)

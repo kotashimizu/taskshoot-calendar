@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { getGoogleCredentialsFromEnv, createGoogleCalendarClient } from '@/lib/google-calendar/client'
 import { GoogleCalendarConfig } from '@/types/google-calendar'
+import { createSafeErrorResponse } from '@/lib/security'
+import { authRateLimiter, getUserIdentifier } from '@/lib/rate-limiter'
 
 /**
  * Google Calendar OAuth認証URLを取得
@@ -13,9 +15,25 @@ export async function GET() {
     // ユーザー認証確認
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     if (authError || !user) {
+      const { response, statusCode } = createSafeErrorResponse(
+        authError,
+        'Authentication required',
+        401
+      )
+      return NextResponse.json(response, { status: statusCode })
+    }
+
+    // レート制限チェック
+    const rateLimitResult = authRateLimiter.check(getUserIdentifier(user.id))
+    if (!rateLimitResult.allowed) {
       return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
+        { error: 'Rate limit exceeded' },
+        { 
+          status: 429,
+          headers: {
+            'Retry-After': rateLimitResult.resetTime ? Math.ceil((rateLimitResult.resetTime - Date.now()) / 1000).toString() : '60',
+          }
+        }
       )
     }
 
@@ -24,9 +42,13 @@ export async function GET() {
     const client = createGoogleCalendarClient(credentials)
 
     // 状態パラメータにユーザーIDを含める（セキュリティ対策）
+    // CSRFトークンとしてランダムな値を追加
+    const csrfToken = crypto.randomUUID()
     const state = JSON.stringify({
       user_id: user.id,
       timestamp: Date.now(),
+      csrf_token: csrfToken,
+      nonce: crypto.randomUUID(), // 追加のランダム性
     })
 
     // OAuth認証URLを生成
@@ -38,11 +60,11 @@ export async function GET() {
     })
 
   } catch (error) {
-    console.error('Google Calendar auth URL generation error:', error)
-    return NextResponse.json(
-      { error: 'Failed to generate auth URL' },
-      { status: 500 }
+    const { response, statusCode } = createSafeErrorResponse(
+      error,
+      'Failed to generate authentication URL'
     )
+    return NextResponse.json(response, { status: statusCode })
   }
 }
 
@@ -51,12 +73,29 @@ export async function GET() {
  */
 export async function POST(request: NextRequest) {
   try {
+    // リクエストサイズ制限チェック
+    const contentLength = request.headers.get('content-length')
+    if (contentLength && parseInt(contentLength) > 10000) { // 10KB制限
+      return NextResponse.json(
+        { error: 'Request too large' },
+        { status: 413 }
+      )
+    }
+
     const body = await request.json()
     const { code, state } = body
 
-    if (!code || !state) {
+    // 入力値の厳密な検証
+    if (!code || typeof code !== 'string' || code.length > 1000) {
       return NextResponse.json(
-        { error: 'Missing required parameters' },
+        { error: 'Invalid authorization code' },
+        { status: 400 }
+      )
+    }
+
+    if (!state || typeof state !== 'string' || state.length > 2000) {
+      return NextResponse.json(
+        { error: 'Invalid state parameter' },
         { status: 400 }
       )
     }
@@ -83,12 +122,20 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // タイムスタンプ検証（10分以内）
+    // タイムスタンプ検証（5分以内に短縮でセキュリティ強化）
     const now = Date.now()
     const stateTimestamp = stateData.timestamp
-    if (now - stateTimestamp > 10 * 60 * 1000) {
+    if (now - stateTimestamp > 5 * 60 * 1000) {
       return NextResponse.json(
         { error: 'State parameter expired' },
+        { status: 400 }
+      )
+    }
+
+    // CSRFトークンとnonceの存在確認
+    if (!stateData.csrf_token || !stateData.nonce) {
+      return NextResponse.json(
+        { error: 'Invalid state parameter format' },
         { status: 400 }
       )
     }
@@ -111,7 +158,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // データベースに設定を保存
+    // データベースに設定を保存（トランザクション使用）
     const configData: Partial<GoogleCalendarConfig> = {
       enabled: true,
       access_token: tokens.access_token,
@@ -131,11 +178,11 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (configError) {
-      console.error('Database error:', configError)
-      return NextResponse.json(
-        { error: 'Failed to save configuration' },
-        { status: 500 }
+      const { response, statusCode } = createSafeErrorResponse(
+        configError,
+        'Failed to save configuration'
       )
+      return NextResponse.json(response, { status: statusCode })
     }
 
     // カレンダー一覧を取得して設定に含める

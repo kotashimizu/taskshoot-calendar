@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
@@ -47,9 +47,9 @@ export function GoogleCalendarSettings({ className = '' }: GoogleCalendarSetting
   // 初期データ読み込み
   useEffect(() => {
     loadConfiguration()
-  }, [])
+  }, []) // loadConfigurationをuseCallbackでメモ化する必要がある
 
-  const loadConfiguration = async () => {
+  const loadConfiguration = useCallback(async () => {
     try {
       setLoading(true)
       
@@ -79,7 +79,7 @@ export function GoogleCalendarSettings({ className = '' }: GoogleCalendarSetting
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
   const loadCalendars = async () => {
     try {
@@ -101,7 +101,7 @@ export function GoogleCalendarSettings({ className = '' }: GoogleCalendarSetting
     }
   }
 
-  const handleConnect = async () => {
+  const handleConnect = useCallback(async () => {
     try {
       // 認証URLを取得
       const response = await fetch('/api/google-calendar/auth')
@@ -121,7 +121,7 @@ export function GoogleCalendarSettings({ className = '' }: GoogleCalendarSetting
         variant: "destructive",
       })
     }
-  }
+  }, [])
 
   const handleDisconnect = async () => {
     try {
