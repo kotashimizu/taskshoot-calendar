@@ -13,6 +13,7 @@ import { TaskFormData, TaskFilters, TaskSortOptions } from '@/types/tasks';
 import { useToast } from '@/hooks/use-toast';
 import { CalendarView } from '@/components/calendar/calendar-view';
 import { CalendarErrorWrapper } from '@/components/calendar/calendar-error-boundary';
+import { GoogleCalendarSettings } from '@/components/google-calendar/google-calendar-settings';
 
 export default function HomePage(): JSX.Element {
   const { user, loading: authLoading } = useAuthContext();
@@ -86,7 +87,7 @@ export default function HomePage(): JSX.Element {
       <Header />
       <main className="container mx-auto px-4 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="dashboard" className="flex items-center gap-2">
               <Layout className="h-4 w-4" />
               ダッシュボード
@@ -98,6 +99,10 @@ export default function HomePage(): JSX.Element {
             <TabsTrigger value="calendar" className="flex items-center gap-2">
               <Calendar className="h-4 w-4" />
               カレンダー
+            </TabsTrigger>
+            <TabsTrigger value="google-calendar" className="flex items-center gap-2">
+              <Calendar className="h-4 w-4" />
+              Google連携
             </TabsTrigger>
           </TabsList>
 
@@ -140,12 +145,11 @@ export default function HomePage(): JSX.Element {
               <div className="rounded-lg border bg-white p-6 shadow-sm">
                 <h3 className="mb-2 text-lg font-semibold">Google連携</h3>
                 <p className="text-sm text-gray-600 mb-4">
-                  Googleカレンダー同期（開発中）
+                  Googleカレンダーとの双方向同期
                 </p>
                 <Button 
-                  variant="outline"
+                  onClick={() => setActiveTab('google-calendar')}
                   className="w-full"
-                  disabled
                 >
                   同期設定
                 </Button>
@@ -275,6 +279,19 @@ export default function HomePage(): JSX.Element {
                   className="bg-white rounded-lg shadow-sm border"
                 />
               </CalendarErrorWrapper>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="google-calendar" className="mt-6">
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-bold text-gray-900">Google Calendar 連携</h2>
+                <div className="text-sm text-gray-600">
+                  カレンダーとタスクの同期設定
+                </div>
+              </div>
+              
+              <GoogleCalendarSettings />
             </div>
           </TabsContent>
         </Tabs>

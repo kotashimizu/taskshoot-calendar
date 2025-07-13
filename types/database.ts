@@ -9,6 +9,135 @@ export type Json =
 export interface Database {
   public: {
     Tables: {
+      google_calendar_configs: {
+        Row: {
+          id: string;
+          user_id: string;
+          enabled: boolean;
+          access_token: string | null;
+          refresh_token: string | null;
+          selected_calendars: Json;
+          sync_frequency: 'manual' | '5min' | '15min' | '30min' | '1hour';
+          sync_direction: 'both' | 'gcal_to_taskshoot' | 'taskshoot_to_gcal';
+          auto_sync_enabled: boolean;
+          last_sync_at: string | null;
+          sync_status: 'idle' | 'syncing' | 'error' | 'success';
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          enabled?: boolean;
+          access_token?: string | null;
+          refresh_token?: string | null;
+          selected_calendars?: Json;
+          sync_frequency?: 'manual' | '5min' | '15min' | '30min' | '1hour';
+          sync_direction?: 'both' | 'gcal_to_taskshoot' | 'taskshoot_to_gcal';
+          auto_sync_enabled?: boolean;
+          last_sync_at?: string | null;
+          sync_status?: 'idle' | 'syncing' | 'error' | 'success';
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          enabled?: boolean;
+          access_token?: string | null;
+          refresh_token?: string | null;
+          selected_calendars?: Json;
+          sync_frequency?: 'manual' | '5min' | '15min' | '30min' | '1hour';
+          sync_direction?: 'both' | 'gcal_to_taskshoot' | 'taskshoot_to_gcal';
+          auto_sync_enabled?: boolean;
+          last_sync_at?: string | null;
+          sync_status?: 'idle' | 'syncing' | 'error' | 'success';
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      sync_logs: {
+        Row: {
+          id: string;
+          user_id: string;
+          sync_type: 'manual' | 'automatic';
+          direction: 'import' | 'export' | 'bidirectional';
+          status: 'success' | 'error' | 'partial';
+          started_at: string;
+          completed_at: string | null;
+          events_processed: number;
+          events_created: number;
+          events_updated: number;
+          events_deleted: number;
+          errors: Json;
+          metadata: Json;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          sync_type: 'manual' | 'automatic';
+          direction: 'import' | 'export' | 'bidirectional';
+          status: 'success' | 'error' | 'partial';
+          started_at?: string;
+          completed_at?: string | null;
+          events_processed?: number;
+          events_created?: number;
+          events_updated?: number;
+          events_deleted?: number;
+          errors?: Json;
+          metadata?: Json;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          sync_type?: 'manual' | 'automatic';
+          direction?: 'import' | 'export' | 'bidirectional';
+          status?: 'success' | 'error' | 'partial';
+          started_at?: string;
+          completed_at?: string | null;
+          events_processed?: number;
+          events_created?: number;
+          events_updated?: number;
+          events_deleted?: number;
+          errors?: Json;
+          metadata?: Json;
+        };
+      };
+      google_event_sync: {
+        Row: {
+          id: string;
+          user_id: string;
+          task_id: string | null;
+          google_event_id: string;
+          google_calendar_id: string;
+          sync_status: 'pending' | 'synced' | 'conflict';
+          last_sync_at: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          task_id?: string | null;
+          google_event_id: string;
+          google_calendar_id: string;
+          sync_status?: 'pending' | 'synced' | 'conflict';
+          last_sync_at?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          task_id?: string | null;
+          google_event_id?: string;
+          google_calendar_id?: string;
+          sync_status?: 'pending' | 'synced' | 'conflict';
+          last_sync_at?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
       profiles: {
         Row: {
           id: string;
