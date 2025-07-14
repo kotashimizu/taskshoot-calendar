@@ -7,7 +7,6 @@ import { Header } from '@/components/layout/header';
 import { TaskList } from '@/components/tasks/task-list';
 import { useTasks } from '@/hooks/use-tasks';
 import { Loader2, Layout, Calendar, Settings } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { TaskFormData, TaskFilters, TaskSortOptions } from '@/types/tasks';
 import { useToast } from '@/hooks/use-toast';

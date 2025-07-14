@@ -3,7 +3,7 @@
  * シンプルで実用的な時間管理サービス
  */
 
-import { supabase } from '@/lib/supabase/client'
+import { getSupabaseClient } from '@/lib/supabase/client'
 import { logger } from '@/lib/logger'
 
 // タスクシュート関連型定義
@@ -70,6 +70,7 @@ export class TaskShootService {
     try {
       logger.debug('Creating task estimate', { userId, taskId, estimatedMinutes })
 
+      const supabase = getSupabaseClient()
       // 既存の見積もりがあれば更新、なければ作成
       const { data: existing } = await supabase
         .from('time_estimates')
@@ -128,6 +129,7 @@ export class TaskShootService {
 
       logger.debug('Starting timer', { userId, taskId })
 
+      const supabase = getSupabaseClient()
       // データベースに時間記録を作成
       const { data, error } = await supabase
         .from('time_records')

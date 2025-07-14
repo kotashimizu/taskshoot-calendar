@@ -162,25 +162,17 @@ export const DEMO_TASKS: TaskWithCategory[] = [
 ];
 
 export const DEMO_STATS: TaskStats = {
-  total: DEMO_TASKS.length,
-  pending: DEMO_TASKS.filter(t => t.status === 'pending').length,
-  in_progress: DEMO_TASKS.filter(t => t.status === 'in_progress').length,
-  completed: DEMO_TASKS.filter(t => t.status === 'completed').length,
-  cancelled: DEMO_TASKS.filter(t => t.status === 'cancelled').length,
-  overdue: DEMO_TASKS.filter(t => 
+  total_tasks: DEMO_TASKS.length,
+  pending_tasks: DEMO_TASKS.filter(t => t.status === 'pending').length,
+  in_progress_tasks: DEMO_TASKS.filter(t => t.status === 'in_progress').length,
+  completed_tasks: DEMO_TASKS.filter(t => t.status === 'completed').length,
+  overdue_tasks: DEMO_TASKS.filter(t => 
     t.due_date && 
     new Date(t.due_date) < new Date() && 
     t.status !== 'completed'
   ).length,
   completion_rate: Math.round(
     (DEMO_TASKS.filter(t => t.status === 'completed').length / DEMO_TASKS.length) * 100
-  ),
-  average_time_accuracy: 95, // パーセント
-  total_estimated_time: DEMO_TASKS.reduce((sum, task) => 
-    sum + (task.estimated_minutes || 0), 0
-  ),
-  total_actual_time: DEMO_TASKS.reduce((sum, task) => 
-    sum + (task.actual_minutes || 0), 0
   ),
 };
 
@@ -227,6 +219,11 @@ export const demoTaskOperations = {
           filteredTasks.sort((a, b) => {
             const aVal = a[sort.field as keyof TaskWithCategory];
             const bVal = b[sort.field as keyof TaskWithCategory];
+            
+            // null/undefined対応
+            if (aVal == null && bVal == null) return 0;
+            if (aVal == null) return sort.direction === 'asc' ? -1 : 1;
+            if (bVal == null) return sort.direction === 'asc' ? 1 : -1;
             
             if (sort.direction === 'asc') {
               return aVal < bVal ? -1 : aVal > bVal ? 1 : 0;
@@ -322,12 +319,11 @@ export const demoTaskOperations = {
     return new Promise((resolve) => {
       setTimeout(() => {
         const stats: TaskStats = {
-          total: demoTasksState.length,
-          pending: demoTasksState.filter(t => t.status === 'pending').length,
-          in_progress: demoTasksState.filter(t => t.status === 'in_progress').length,
-          completed: demoTasksState.filter(t => t.status === 'completed').length,
-          cancelled: demoTasksState.filter(t => t.status === 'cancelled').length,
-          overdue: demoTasksState.filter(t => 
+          total_tasks: demoTasksState.length,
+          pending_tasks: demoTasksState.filter(t => t.status === 'pending').length,
+          in_progress_tasks: demoTasksState.filter(t => t.status === 'in_progress').length,
+          completed_tasks: demoTasksState.filter(t => t.status === 'completed').length,
+          overdue_tasks: demoTasksState.filter(t => 
             t.due_date && 
             new Date(t.due_date) < new Date() && 
             t.status !== 'completed'
@@ -335,13 +331,6 @@ export const demoTaskOperations = {
           completion_rate: demoTasksState.length > 0 ? Math.round(
             (demoTasksState.filter(t => t.status === 'completed').length / demoTasksState.length) * 100
           ) : 0,
-          average_time_accuracy: 95,
-          total_estimated_time: demoTasksState.reduce((sum, task) => 
-            sum + (task.estimated_minutes || 0), 0
-          ),
-          total_actual_time: demoTasksState.reduce((sum, task) => 
-            sum + (task.actual_minutes || 0), 0
-          ),
         };
         resolve(stats);
       }, 200);

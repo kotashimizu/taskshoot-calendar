@@ -6,8 +6,17 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, isToday, addMonths, subMonths } from 'date-fns';
-import { ja } from 'date-fns/locale';
+import { 
+  format, 
+  startOfMonth, 
+  endOfMonth, 
+  isSameMonth, 
+  isSameDay, 
+  isToday, 
+  addMonths, 
+  subMonths,
+  addDays
+} from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
@@ -34,7 +43,14 @@ export function SimpleCalendar({ tasks = [], loading = false, error = null, clas
   const calendarData = useMemo(() => {
     const start = startOfMonth(currentDate);
     const end = endOfMonth(currentDate);
-    const days = eachDayOfInterval({ start, end });
+    
+    // Generate days manually instead of using eachDayOfInterval
+    const days: Date[] = [];
+    let currentDay = start;
+    while (currentDay <= end) {
+      days.push(new Date(currentDay));
+      currentDay = addDays(currentDay, 1);
+    }
 
     return days.map((date): CalendarDay => {
       const dayTasks = tasks.filter(task => {
@@ -120,7 +136,7 @@ export function SimpleCalendar({ tasks = [], loading = false, error = null, clas
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle className="text-xl font-bold">
-            {format(currentDate, 'yyyy年M月', { locale: ja })}
+            {format(currentDate, 'yyyy年M月')}
           </CardTitle>
           <div className="flex items-center gap-2">
             <Button
@@ -160,7 +176,7 @@ export function SimpleCalendar({ tasks = [], loading = false, error = null, clas
 
         {/* カレンダーグリッド */}
         <div className="grid grid-cols-7 gap-1">
-          {calendarData.map((day, index) => (
+          {calendarData.map((day: CalendarDay, index: number) => (
             <div
               key={index}
               className={`
@@ -181,7 +197,7 @@ export function SimpleCalendar({ tasks = [], loading = false, error = null, clas
 
               {/* タスク */}
               <div className="space-y-1">
-                {day.tasks.slice(0, 2).map(task => (
+                {day.tasks.slice(0, 2).map((task: TaskWithCategory) => (
                   <div
                     key={task.id}
                     className={`
