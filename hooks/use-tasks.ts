@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { useAuth } from '@/hooks/use-auth'
 import { logger } from '@/lib/logger'
+import { demoTaskOperations } from '@/lib/demo-data'
 import {
   Task,
   TaskWithCategory,
@@ -90,6 +91,26 @@ export function useTasks(
   const fetchTasks = useCallback(async (force = false) => {
     if (!user) return
 
+    // デモモードの場合
+    if (user.email === 'demo@taskshoot.com') {
+      try {
+        setLoading(true)
+        setError(null)
+        
+        const demoTasks = await demoTaskOperations.getTasks(filters, sort)
+        setTasks(demoTasks)
+        setLoading(false)
+        
+        logger.debug('Demo tasks loaded', { count: demoTasks.length })
+        return
+      } catch (error) {
+        logger.error('Failed to load demo tasks', error)
+        setError('デモタスクの読み込みに失敗しました')
+        setLoading(false)
+        return
+      }
+    }
+
     // キャッシュチェック
     if (!force) {
       const cachedData = getCachedData()
@@ -173,6 +194,21 @@ export function useTasks(
   const createTask = useCallback(async (taskData: Omit<TaskInsert, 'user_id'>): Promise<Task | null> => {
     if (!user) return null
 
+    // デモモードの場合
+    if (user.email === 'demo@taskshoot.com') {
+      try {
+        const newTask = await demoTaskOperations.createTask(taskData)
+        await fetchTasks(true)
+        logger.debug('Demo task created', { taskId: newTask.id })
+        return newTask as Task
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'デモタスクの作成に失敗しました'
+        setError(errorMessage)
+        logger.error('Error creating demo task', err)
+        return null
+      }
+    }
+
     try {
       const response = await fetch('/api/tasks', {
         method: 'POST',
@@ -212,6 +248,21 @@ export function useTasks(
     updates: Omit<TaskUpdate, 'user_id' | 'id'>
   ): Promise<Task | null> => {
     if (!user) return null
+
+    // デモモードの場合
+    if (user.email === 'demo@taskshoot.com') {
+      try {
+        const updatedTask = await demoTaskOperations.updateTask(taskId, updates)
+        await fetchTasks(true)
+        logger.debug('Demo task updated', { taskId })
+        return updatedTask as Task
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'デモタスクの更新に失敗しました'
+        setError(errorMessage)
+        logger.error('Error updating demo task', err)
+        return null
+      }
+    }
 
     try {
       const response = await fetch(`/api/tasks/${taskId}`, {
@@ -259,6 +310,21 @@ export function useTasks(
 
   const deleteTask = useCallback(async (taskId: string): Promise<boolean> => {
     if (!user) return false
+
+    // デモモードの場合
+    if (user.email === 'demo@taskshoot.com') {
+      try {
+        await demoTaskOperations.deleteTask(taskId)
+        await fetchTasks(true)
+        logger.debug('Demo task deleted', { taskId })
+        return true
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'デモタスクの削除に失敗しました'
+        setError(errorMessage)
+        logger.error('Error deleting demo task', err)
+        return false
+      }
+    }
 
     try {
       const response = await fetch(`/api/tasks/${taskId}`, {

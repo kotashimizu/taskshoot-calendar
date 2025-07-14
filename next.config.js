@@ -37,6 +37,13 @@ const nextConfig = {
   // セキュリティ重視の設定
   poweredByHeader: false,
 
+  // 環境変数の公開設定
+  env: {
+    NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
+    NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    NEXT_PUBLIC_DEMO_MODE: process.env.NEXT_PUBLIC_DEMO_MODE,
+  },
+
   // 実験的機能
   experimental: {
     typedRoutes: true,

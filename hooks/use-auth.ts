@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { User, Session } from '@supabase/supabase-js';
-import { createClient } from '@/lib/supabase/client';
+import { getSupabaseClient } from '@/lib/supabase/client';
 import { logger } from '@/lib/logger';
 
 export function useAuth() {
@@ -12,7 +12,7 @@ export function useAuth() {
   const [error, setError] = useState<string | null>(null);
 
   // Supabaseクライアントをメモ化して再作成を防ぐ
-  const supabase = useMemo(() => createClient(), []);
+  const supabase = useMemo(() => getSupabaseClient(), []);
 
   useEffect(() => {
     let mounted = true;
@@ -115,12 +115,73 @@ export function useAuth() {
     }
   }, [supabase]);
 
+  const signInDemo = useCallback(async () => {
+    try {
+      setError(null);
+      logger.authEvent('Demo sign-in initiated');
+
+      // デモ用のダミーユーザーを作成
+      const demoUser = {
+        id: 'demo-user-' + Date.now(),
+        email: 'demo@taskshoot.com',
+        user_metadata: {
+          name: 'デモユーザー',
+          full_name: 'デモユーザー',
+          avatar_url: null,
+        },
+        app_metadata: {},
+        aud: 'authenticated',
+        role: 'authenticated',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        email_confirmed_at: new Date().toISOString(),
+        phone_confirmed_at: null,
+        confirmed_at: new Date().toISOString(),
+        last_sign_in_at: new Date().toISOString(),
+        recovery_sent_at: null,
+        invited_at: null,
+        action_link: null,
+        email_change: null,
+        email_change_sent_at: null,
+        email_change_token: null,
+        email_change_confirm_status: 0,
+        phone_change: null,
+        phone_change_token: null,
+        phone_change_sent_at: null,
+        phone: null,
+        phone_change_confirm_status: 0,
+        banned_until: null,
+        identities: []
+      } as User;
+
+      const demoSession = {
+        access_token: 'demo-access-token',
+        token_type: 'bearer',
+        expires_in: 86400,
+        expires_at: Math.floor(Date.now() / 1000) + 86400,
+        refresh_token: 'demo-refresh-token',
+        user: demoUser
+      } as Session;
+
+      setSession(demoSession);
+      setUser(demoUser);
+      setLoading(false);
+
+      logger.authEvent('Demo sign-in completed', { userEmail: demoUser.email });
+    } catch (error) {
+      logger.error('Demo sign-in failed', error);
+      setError('デモモードでのログインに失敗しました');
+      throw error;
+    }
+  }, []);
+
   return {
     user,
     session,
     loading,
     error,
     signInWithGoogle,
+    signInDemo,
     signOut,
   };
 }

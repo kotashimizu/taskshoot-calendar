@@ -10,7 +10,11 @@
       "Bash(git add:*)",
       "Bash(git merge:*)",
       "Bash(npx shadcn-ui:*)",
-      "Bash(npm run type-check:*)"
+      "Bash(npm run type-check:*)",
+      "Bash(source:*)",
+      "Bash(supabase projects:*)",
+      "Bash(node:*)",
+      "Bash(npm run dev:*)"
     ],
     "deny": []
   }

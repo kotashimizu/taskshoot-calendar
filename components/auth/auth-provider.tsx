@@ -10,6 +10,7 @@ interface AuthContextType {
   loading: boolean;
   error: string | null;
   signInWithGoogle: () => Promise<void>;
+  signInDemo: () => Promise<void>;
   signOut: () => Promise<void>;
 }
 

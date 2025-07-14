@@ -12,7 +12,7 @@ import {
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useAuthContext } from './auth-provider';
 import { useToastEnhanced } from '@/hooks/use-toast-enhanced';
-import { Loader2, AlertCircle } from 'lucide-react';
+import { Loader2, AlertCircle, Play } from 'lucide-react';
 
 // GoogleアイコンをSVGコンポーネントとして分離
 function GoogleIcon({ className }: { className?: string }) {
@@ -40,7 +40,8 @@ function GoogleIcon({ className }: { className?: string }) {
 
 export function LoginForm() {
   const [loading, setLoading] = useState(false);
-  const { signInWithGoogle, error } = useAuthContext();
+  const [demoLoading, setDemoLoading] = useState(false);
+  const { signInWithGoogle, error, signInDemo } = useAuthContext();
   const { showError } = useToastEnhanced();
 
   const handleSignIn = useCallback(async () => {
@@ -56,6 +57,20 @@ export function LoginForm() {
       setLoading(false);
     }
   }, [signInWithGoogle, showError]);
+
+  const handleDemoSignIn = useCallback(async () => {
+    try {
+      setDemoLoading(true);
+      await signInDemo();
+    } catch (error) {
+      showError(
+        'デモモードでのログインに失敗しました。',
+        error instanceof Error ? error : undefined
+      );
+    } finally {
+      setDemoLoading(false);
+    }
+  }, [signInDemo, showError]);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
@@ -78,8 +93,8 @@ export function LoginForm() {
 
           <Button
             onClick={handleSignIn}
-            disabled={loading}
-            className="w-full bg-blue-600 text-white transition-colors hover:bg-blue-700"
+            disabled={loading || demoLoading}
+            className="w-full bg-blue-600 text-white transition-colors hover:bg-blue-700 disabled:opacity-50"
             size="lg"
             aria-label="Googleアカウントでログイン"
           >
@@ -93,6 +108,42 @@ export function LoginForm() {
             )}
             {loading ? 'ログイン中...' : 'Googleでログイン'}
           </Button>
+
+          {true && (
+            <>
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t border-gray-300" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-white px-2 text-gray-500">または</span>
+                </div>
+              </div>
+
+              <Button
+                onClick={handleDemoSignIn}
+                disabled={loading || demoLoading}
+                variant="outline"
+                className="w-full border-gray-300 text-gray-700 transition-colors hover:bg-gray-50"
+                size="lg"
+                aria-label="デモモードで開始"
+              >
+                {demoLoading ? (
+                  <Loader2
+                    className="mr-2 h-4 w-4 animate-spin"
+                    aria-hidden="true"
+                  />
+                ) : (
+                  <Play className="mr-2 h-4 w-4" />
+                )}
+                {demoLoading ? 'デモ起動中...' : 'デモモードで開始'}
+              </Button>
+
+              <p className="text-xs text-gray-500 text-center">
+                デモモードでは一部の機能が制限されます
+              </p>
+            </>
+          )}
         </CardContent>
       </Card>
     </div>

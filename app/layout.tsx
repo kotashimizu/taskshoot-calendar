@@ -1,8 +1,7 @@
 import type { Metadata } from 'next';
 import { Noto_Sans_JP } from 'next/font/google';
 import './globals.css';
-import { AuthProvider } from '@/components/auth/auth-provider';
-import { Toaster } from '@/components/ui/toaster';
+import { AppProviders } from '@/components/providers/app-providers';
 
 const notoSansJP = Noto_Sans_JP({
   subsets: ['latin'],
@@ -39,10 +38,9 @@ export default function RootLayout({
   return (
     <html lang="ja" suppressHydrationWarning>
       <body className={notoSansJP.variable}>
-        <AuthProvider>
+        <AppProviders>
           {children}
-          <Toaster />
-        </AuthProvider>
+        </AppProviders>
       </body>
     </html>
   );
