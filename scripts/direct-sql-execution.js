@@ -12,7 +12,7 @@ import { config } from 'dotenv'
 config({ path: '.env.local' })
 
 const __filename = fileURLToPath(import.meta.url)
-const __dirname = dirname(__dirname)
+const __dirname = dirname(__filename)
 
 // 環境変数チェック
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -107,7 +107,7 @@ async function executeDDL(sqlContent, migrationName) {
  */
 async function runMigration(filename) {
   try {
-    const sqlPath = join(__dirname, 'supabase', 'migrations', filename)
+    const sqlPath = join(dirname(__dirname), 'supabase', 'migrations', filename)
     const sqlContent = readFileSync(sqlPath, 'utf8')
     
     const result = await executeDDL(sqlContent, filename)
