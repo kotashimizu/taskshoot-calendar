@@ -6,13 +6,14 @@ import { LoginForm } from '@/components/auth/login-form';
 import { Header } from '@/components/layout/header';
 import { TaskList } from '@/components/tasks/task-list';
 import { useTasks } from '@/hooks/use-tasks';
-import { Loader2, Layout, Calendar, Settings } from 'lucide-react';
+import { Loader2, Layout, Calendar, Settings, Timer } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { TaskFormData, TaskFilters, TaskSortOptions } from '@/types/tasks';
 import { useToast } from '@/hooks/use-toast';
 import { SimpleCalendar } from '@/components/calendar/simple-calendar';
 import { GoogleCalendarSettings } from '@/components/google-calendar/google-calendar-settings';
 import { EnhancedDashboard } from '@/components/dashboard/enhanced-dashboard';
+import { TimerDashboard } from '@/components/taskshoot/timer-dashboard';
 
 export default function HomePage(): JSX.Element {
   const { user, loading: authLoading } = useAuthContext();
@@ -86,10 +87,14 @@ export default function HomePage(): JSX.Element {
       <Header />
       <main className="container mx-auto px-4 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="dashboard" className="flex items-center gap-2">
               <Layout className="h-4 w-4" />
               ダッシュボード
+            </TabsTrigger>
+            <TabsTrigger value="taskshoot" className="flex items-center gap-2">
+              <Timer className="h-4 w-4" />
+              TaskShoot
             </TabsTrigger>
             <TabsTrigger value="tasks" className="flex items-center gap-2">
               <Settings className="h-4 w-4" />
@@ -112,6 +117,22 @@ export default function HomePage(): JSX.Element {
               onNavigateToCalendar={() => setActiveTab('calendar')}
               onCreateTask={() => setActiveTab('tasks')}
             />
+          </TabsContent>
+
+          <TabsContent value="taskshoot" className="mt-6">
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                  <Timer className="h-6 w-6" />
+                  TaskShoot - 時間計測
+                </h2>
+                <div className="text-sm text-gray-600">
+                  時間を可視化し、生産性を最大化
+                </div>
+              </div>
+              
+              <TimerDashboard tasks={tasks} />
+            </div>
           </TabsContent>
 
           <TabsContent value="tasks" className="mt-6">

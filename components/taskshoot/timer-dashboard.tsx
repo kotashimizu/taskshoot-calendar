@@ -52,12 +52,13 @@ interface RecentRecord {
 }
 
 interface TimerDashboardProps {
+  tasks?: Task[]
   className?: string
 }
 
-export function TimerDashboard({ className }: TimerDashboardProps) {
+export function TimerDashboard({ tasks: propTasks = [], className }: TimerDashboardProps) {
   // State
-  const [tasks, setTasks] = useState<Task[]>([])
+  const [tasks, setTasks] = useState<Task[]>(propTasks)
   const [selectedTask, setSelectedTask] = useState<Task | null>(null)
   const [dailyStats, setDailyStats] = useState<DailyStats | null>(null)
   const [recentRecords, setRecentRecords] = useState<RecentRecord[]>([])
@@ -69,21 +70,12 @@ export function TimerDashboard({ className }: TimerDashboardProps) {
     try {
       setIsLoading(true)
       
-      // 並行してデータを取得
-      const [tasksRes, statsRes, recordsRes, timerRes] = await Promise.all([
-        fetch('/api/tasks?status=pending,in_progress&limit=20'),
+      // 並行してデータを取得（タスクは除く - propsから取得）
+      const [statsRes, recordsRes, timerRes] = await Promise.all([
         fetch('/api/taskshoot/stats?period=today'),
         fetch('/api/taskshoot/stats?recent=5'),
         fetch('/api/taskshoot/timer/v2')
       ])
-
-      // タスク一覧
-      if (tasksRes.ok) {
-        const tasksData = await tasksRes.json()
-        if (tasksData.success) {
-          setTasks(tasksData.data || [])
-        }
-      }
 
       // 本日の統計
       if (statsRes.ok) {
@@ -157,6 +149,11 @@ export function TimerDashboard({ className }: TimerDashboardProps) {
     }
     return `${mins}分`
   }
+
+  // propsでタスクが変更された際の更新
+  useEffect(() => {
+    setTasks(propTasks)
+  }, [propTasks])
 
   // 初期読み込み
   useEffect(() => {
