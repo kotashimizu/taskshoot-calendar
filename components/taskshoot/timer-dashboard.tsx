@@ -190,37 +190,82 @@ export function TimerDashboard({ tasks: propTasks = [], className }: TimerDashbo
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* 左側: タイマーエリア */}
         <div className="space-y-4">
-          {/* タスク選択 */}
+          {/* 当日タスクカレンダー */}
           {!activeTimer && (
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
-                  <Target className="h-5 w-5" />
-                  タスク選択
+                  <Calendar className="h-5 w-5" />
+                  今日のタスク
                 </CardTitle>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {new Date().toLocaleDateString('ja-JP', { 
+                    month: 'long', 
+                    day: 'numeric', 
+                    weekday: 'long' 
+                  })}
+                </p>
               </CardHeader>
               <CardContent>
                 {tasks.length > 0 ? (
-                  <Select onValueChange={handleTaskSelect}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="タイマーを開始するタスクを選択..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {tasks.map((task) => (
-                        <SelectItem key={task.id} value={task.id}>
-                          <div className="flex items-center gap-2">
-                            <div className={cn("w-2 h-2 rounded-full", getPriorityColor(task.priority))} />
-                            <span className="truncate">{task.title}</span>
-                            {task.estimated_minutes && (
-                              <Badge variant="outline" className="text-xs">
-                                {task.estimated_minutes}分
-                              </Badge>
+                  <div className="space-y-2 max-h-96 overflow-y-auto">
+                    {tasks.map((task) => (
+                      <div
+                        key={task.id}
+                        onClick={() => handleTaskSelect(task.id)}
+                        className={cn(
+                          "p-3 border rounded-lg cursor-pointer transition-all hover:shadow-md",
+                          selectedTask?.id === task.id
+                            ? "border-primary bg-primary/5 shadow-md"
+                            : "border-border hover:border-primary/50"
+                        )}
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <div className={cn("w-3 h-3 rounded-full", getPriorityColor(task.priority))} />
+                              <h4 className="font-medium text-sm truncate">{task.title}</h4>
+                            </div>
+                            
+                            {task.description && (
+                              <p className="text-xs text-muted-foreground mb-2 line-clamp-2">
+                                {task.description}
+                              </p>
                             )}
+                            
+                            <div className="flex items-center gap-2">
+                              {task.estimated_minutes && (
+                                <Badge variant="outline" className="text-xs">
+                                  <Clock className="h-3 w-3 mr-1" />
+                                  {task.estimated_minutes}分
+                                </Badge>
+                              )}
+                              
+                              <Badge 
+                                variant={task.priority === 'high' ? 'destructive' : 
+                                        task.priority === 'medium' ? 'default' : 'secondary'}
+                                className="text-xs"
+                              >
+                                {task.priority === 'high' ? '高' : 
+                                 task.priority === 'medium' ? '中' : '低'}
+                              </Badge>
+                              
+                              <Badge variant="outline" className="text-xs">
+                                {task.status === 'pending' ? '待機中' : 
+                                 task.status === 'in_progress' ? '進行中' : '完了'}
+                              </Badge>
+                            </div>
                           </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                          
+                          {selectedTask?.id === task.id && (
+                            <div className="flex items-center ml-2">
+                              <CheckCircle className="h-4 w-4 text-primary" />
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 ) : (
                   <div className="text-center py-8 text-muted-foreground">
                     <Target className="h-12 w-12 mx-auto mb-2 opacity-50" />
