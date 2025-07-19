@@ -10,6 +10,13 @@ import React, { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog'
 import { 
   Play, 
   Clock,
@@ -18,9 +25,14 @@ import {
   User,
   Timer as TimerIcon,
   ChevronDown,
-  ChevronRight
+  ChevronRight,
+  Plus
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { TaskList } from '@/components/tasks/task-list'
+import { useTasks } from '@/hooks/use-tasks'
+import { useToast } from '@/hooks/use-toast'
+import { TaskFormData, TaskFilters, TaskSortOptions } from '@/types/tasks'
 
 interface Task {
   id: string
@@ -56,6 +68,7 @@ interface DashboardStats {
 export function RedesignedTimerDashboard({ tasks: propTasks = [], className }: RedesignedTimerDashboardProps) {
   const [tasks, setTasks] = useState<Task[]>(propTasks)
   const [selectedTask, setSelectedTask] = useState<Task | null>(null)
+  const [isTaskDialogOpen, setIsTaskDialogOpen] = useState(false)
   const [stats, setStats] = useState<DashboardStats>({
     totalTasks: 0,
     completedTasks: 0,
@@ -63,6 +76,19 @@ export function RedesignedTimerDashboard({ tasks: propTasks = [], className }: R
     delayMinutes: 0,
     currentTime: '00:00'
   })
+
+  // タスク管理フック
+  const { toast } = useToast()
+  const [filters, setFilters] = useState<TaskFilters>({})
+  const [sort, setSort] = useState<TaskSortOptions>({ field: 'created_at', direction: 'desc' })
+  
+  const {
+    tasks: allTasks,
+    loading: tasksLoading,
+    createTask,
+    updateTask,
+    deleteTask
+  } = useTasks(filters, sort)
   
   const [timeSections, setTimeSections] = useState<TimeSection[]>([
     {
@@ -140,6 +166,48 @@ export function RedesignedTimerDashboard({ tasks: propTasks = [], className }: R
     setTimeSections(updatedSections)
   }, [propTasks])
 
+  // タスク管理ハンドラー
+  const handleCreateTask = async (data: TaskFormData) => {
+    const result = await createTask(data)
+    if (result) {
+      toast({
+        title: "成功",
+        description: "タスクが作成されました",
+      })
+      setIsTaskDialogOpen(false)
+    }
+  }
+
+  const handleUpdateTask = async (taskId: string, data: Partial<TaskFormData>) => {
+    const result = await updateTask(taskId, data)
+    if (result) {
+      toast({
+        title: "成功", 
+        description: "タスクが更新されました",
+      })
+    }
+  }
+
+  const handleDeleteTask = async (taskId: string) => {
+    const result = await deleteTask(taskId)
+    if (result) {
+      toast({
+        title: "成功",
+        description: "タスクが削除されました",
+      })
+    }
+  }
+
+  const handleStatusChange = async (taskId: string, status: any) => {
+    const result = await updateTask(taskId, { status })
+    if (result) {
+      toast({
+        title: "ステータス更新",
+        description: "タスクのステータスが更新されました",
+      })
+    }
+  }
+
   const handleTaskSelect = (task: Task) => {
     setSelectedTask(task)
   }
@@ -178,9 +246,34 @@ export function RedesignedTimerDashboard({ tasks: propTasks = [], className }: R
             <span className="text-sm text-gray-600">{currentDate}</span>
           </div>
           <div className="flex items-center gap-4">
-            <Button variant="outline" size="sm">
-              タスク追加
-            </Button>
+            <Dialog open={isTaskDialogOpen} onOpenChange={setIsTaskDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm" className="flex items-center gap-2">
+                  <Plus className="h-4 w-4" />
+                  タスク追加
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2">
+                    <Plus className="h-5 w-5" />
+                    タスク管理
+                  </DialogTitle>
+                </DialogHeader>
+                <div className="mt-4">
+                  <TaskList
+                    tasks={allTasks}
+                    loading={tasksLoading}
+                    onCreateTask={handleCreateTask}
+                    onUpdateTask={handleUpdateTask}
+                    onDeleteTask={handleDeleteTask}
+                    onStatusChange={handleStatusChange}
+                    onFiltersChange={setFilters}
+                    onSortChange={setSort}
+                  />
+                </div>
+              </DialogContent>
+            </Dialog>
           </div>
         </div>
 

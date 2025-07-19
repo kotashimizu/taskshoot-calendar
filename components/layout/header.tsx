@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, memo } from 'react';
+import { useCallback, memo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
@@ -10,13 +10,21 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { useAuthContext } from '@/components/auth/auth-provider';
 import { useToastEnhanced } from '@/hooks/use-toast-enhanced';
-import { LogOut, Settings, User } from 'lucide-react';
+import { LogOut, Settings, User, Calendar } from 'lucide-react';
+import { GoogleCalendarSettings } from '@/components/google-calendar/google-calendar-settings';
 
 export const Header = memo(function Header() {
   const { user, signOut } = useAuthContext();
   const { showSuccess, showError } = useToastEnhanced();
+  const [isGoogleCalendarDialogOpen, setIsGoogleCalendarDialogOpen] = useState(false);
 
   const handleSignOut = useCallback(async () => {
     try {
@@ -103,6 +111,12 @@ export const Header = memo(function Header() {
                   開発中
                 </span>
               </DropdownMenuItem>
+              <DropdownMenuItem 
+                onClick={() => setIsGoogleCalendarDialogOpen(true)}
+              >
+                <Calendar className="mr-2 h-4 w-4" aria-hidden="true" />
+                Google Calendar 連携
+              </DropdownMenuItem>
               <DropdownMenuItem disabled>
                 <Settings className="mr-2 h-4 w-4" aria-hidden="true" />
                 設定
@@ -119,6 +133,21 @@ export const Header = memo(function Header() {
           </DropdownMenu>
         </nav>
       </div>
+
+      {/* Google Calendar 連携ダイアログ */}
+      <Dialog open={isGoogleCalendarDialogOpen} onOpenChange={setIsGoogleCalendarDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Calendar className="h-5 w-5" />
+              Google Calendar 連携設定
+            </DialogTitle>
+          </DialogHeader>
+          <div className="mt-4">
+            <GoogleCalendarSettings />
+          </div>
+        </DialogContent>
+      </Dialog>
     </header>
   );
 });
