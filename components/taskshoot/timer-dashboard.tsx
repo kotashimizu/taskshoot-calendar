@@ -13,7 +13,8 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { RedesignedTimerDashboard } from './redesigned-timer-dashboard'
+import { DailyTimelineCalendar } from './daily-timeline-calendar'
 import { AdvancedTimer } from './advanced-timer'
 import { 
   Clock, 
@@ -172,228 +173,31 @@ export function TimerDashboard({ tasks: propTasks = [], className }: TimerDashbo
   }
 
   return (
-    <div className={cn("max-w-6xl mx-auto space-y-6", className)}>
-      {/* ヘッダー */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold flex items-center gap-2">
-          <TimerIcon className="h-7 w-7" />
-          TaskShoot タイマー
-        </h1>
-        
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Calendar className="h-4 w-4" />
-          {new Date().toLocaleDateString('ja-JP')}
+    <div className={cn("max-w-7xl mx-auto space-y-6", className)}>
+      {/* 新しいデザインのダッシュボード */}
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        {/* 左側: メインダッシュボード (2/3幅) */}
+        <div className="xl:col-span-2">
+          <RedesignedTimerDashboard tasks={tasks} />
+        </div>
+
+        {/* 右側: タイムラインカレンダー (1/3幅) */}
+        <div className="xl:col-span-1">
+          <DailyTimelineCalendar tasks={tasks} />
         </div>
       </div>
 
-      {/* メインエリア */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* 左側: タイマーエリア */}
-        <div className="space-y-4">
-          {/* 当日タスクカレンダー */}
-          {!activeTimer && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Calendar className="h-5 w-5" />
-                  今日のタスク
-                </CardTitle>
-                <p className="text-sm text-muted-foreground mt-1">
-                  {new Date().toLocaleDateString('ja-JP', { 
-                    month: 'long', 
-                    day: 'numeric', 
-                    weekday: 'long' 
-                  })}
-                </p>
-              </CardHeader>
-              <CardContent>
-                {tasks.length > 0 ? (
-                  <div className="space-y-2 max-h-96 overflow-y-auto">
-                    {tasks.map((task) => (
-                      <div
-                        key={task.id}
-                        onClick={() => handleTaskSelect(task.id)}
-                        className={cn(
-                          "p-3 border rounded-lg cursor-pointer transition-all hover:shadow-md",
-                          selectedTask?.id === task.id
-                            ? "border-primary bg-primary/5 shadow-md"
-                            : "border-border hover:border-primary/50"
-                        )}
-                      >
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1">
-                              <div className={cn("w-3 h-3 rounded-full", getPriorityColor(task.priority))} />
-                              <h4 className="font-medium text-sm truncate">{task.title}</h4>
-                            </div>
-                            
-                            {task.description && (
-                              <p className="text-xs text-muted-foreground mb-2 line-clamp-2">
-                                {task.description}
-                              </p>
-                            )}
-                            
-                            <div className="flex items-center gap-2">
-                              {task.estimated_minutes && (
-                                <Badge variant="outline" className="text-xs">
-                                  <Clock className="h-3 w-3 mr-1" />
-                                  {task.estimated_minutes}分
-                                </Badge>
-                              )}
-                              
-                              <Badge 
-                                variant={task.priority === 'high' ? 'destructive' : 
-                                        task.priority === 'medium' ? 'default' : 'secondary'}
-                                className="text-xs"
-                              >
-                                {task.priority === 'high' ? '高' : 
-                                 task.priority === 'medium' ? '中' : '低'}
-                              </Badge>
-                              
-                              <Badge variant="outline" className="text-xs">
-                                {task.status === 'pending' ? '待機中' : 
-                                 task.status === 'in_progress' ? '進行中' : '完了'}
-                              </Badge>
-                            </div>
-                          </div>
-                          
-                          {selectedTask?.id === task.id && (
-                            <div className="flex items-center ml-2">
-                              <CheckCircle className="h-4 w-4 text-primary" />
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <Target className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                    <p>作業可能なタスクがありません</p>
-                    <p className="text-sm">新しいタスクを作成してください</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          )}
-
-          {/* タイマーコンポーネント */}
-          {selectedTask && (
-            <AdvancedTimer
-              taskId={selectedTask.id}
-              taskTitle={selectedTask.title}
-              estimatedMinutes={selectedTask.estimated_minutes}
-              onTimerChange={handleTimerChange}
-            />
-          )}
+      {/* アクティブタイマー表示 */}
+      {selectedTask && (
+        <div className="bg-white rounded-lg shadow-sm border p-6">
+          <AdvancedTimer
+            taskId={selectedTask.id}
+            taskTitle={selectedTask.title}
+            estimatedMinutes={selectedTask.estimated_minutes}
+            onTimerChange={handleTimerChange}
+          />
         </div>
-
-        {/* 右側: 統計・履歴エリア */}
-        <div className="space-y-4">
-          {/* 本日の統計 */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <BarChart3 className="h-5 w-5" />
-                本日の統計
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {dailyStats ? (
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-primary">
-                      {dailyStats.total_sessions}
-                    </div>
-                    <div className="text-sm text-muted-foreground">セッション数</div>
-                  </div>
-                  
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-primary">
-                      {dailyStats.total_hours.toFixed(1)}h
-                    </div>
-                    <div className="text-sm text-muted-foreground">作業時間</div>
-                  </div>
-                  
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-primary">
-                      {dailyStats.completed_tasks}
-                    </div>
-                    <div className="text-sm text-muted-foreground">完了タスク</div>
-                  </div>
-                  
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-primary">
-                      {dailyStats.avg_focus_score.toFixed(1)}
-                    </div>
-                    <div className="text-sm text-muted-foreground">平均集中度</div>
-                  </div>
-                </div>
-              ) : (
-                <div className="text-center py-4 text-muted-foreground">
-                  <TrendingUp className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                  <p>本日のデータはまだありません</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* 最近の記録 */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Clock className="h-5 w-5" />
-                最近の記録
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {recentRecords.length > 0 ? (
-                <div className="space-y-3">
-                  {recentRecords.map((record, index) => (
-                    <div key={record.id}>
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium truncate">
-                            {record.task_title}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {new Date(record.completed_at).toLocaleString('ja-JP')}
-                          </p>
-                        </div>
-                        
-                        <div className="flex items-center gap-2 text-sm">
-                          <Badge variant="outline">
-                            {formatDuration(record.duration_minutes)}
-                          </Badge>
-                          
-                          <div className="flex items-center gap-1">
-                            <span className="text-xs">集中度</span>
-                            <Badge 
-                              variant={record.focus_score >= 8 ? "default" : record.focus_score >= 6 ? "secondary" : "destructive"}
-                              className="text-xs"
-                            >
-                              {record.focus_score}/10
-                            </Badge>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      {index < recentRecords.length - 1 && (
-                        <Separator className="mt-3" />
-                      )}
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-4 text-muted-foreground">
-                  <CheckCircle className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                  <p>記録はまだありません</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+      )}
 
       {/* アクティブタイマー通知 */}
       {activeTimer && (
