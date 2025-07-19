@@ -181,6 +181,7 @@ export class TaskShootService {
 
       logger.debug('Stopping timer', { userId, recordId })
 
+      const supabase = getSupabaseClient()
       const endTime = new Date().toISOString()
 
       // データベースの時間記録を更新
@@ -235,6 +236,7 @@ export class TaskShootService {
    */
   async getEstimate(userId: string, taskId: string): Promise<TaskEstimate | null> {
     try {
+      const supabase = getSupabaseClient()
       const { data, error } = await supabase
         .from('time_estimates')
         .select('*')
@@ -256,6 +258,7 @@ export class TaskShootService {
    */
   async getTimeRecords(userId: string, taskId?: string): Promise<TimeRecord[]> {
     try {
+      const supabase = getSupabaseClient()
       let query = supabase
         .from('time_records')
         .select('*')
@@ -283,6 +286,7 @@ export class TaskShootService {
     try {
       logger.debug('Getting stats', { userId, startDate, endDate })
 
+      const supabase = getSupabaseClient()
       // 基本クエリ
       const estimatesQuery = supabase
         .from('time_estimates')
@@ -316,15 +320,15 @@ export class TaskShootService {
       const records = recordsResult.data || []
 
       // 統計計算
-      const totalEstimatedMinutes = estimates.reduce((sum, e) => sum + e.estimated_minutes, 0)
-      const totalActualMinutes = records.reduce((sum, r) => sum + (r.duration_minutes || 0), 0)
+      const totalEstimatedMinutes = estimates.reduce((sum: number, e: any) => sum + e.estimated_minutes, 0)
+      const totalActualMinutes = records.reduce((sum: number, r: any) => sum + (r.duration_minutes || 0), 0)
       
       const accuracy = totalEstimatedMinutes > 0 
         ? (totalActualMinutes / totalEstimatedMinutes) * 100
         : 0
 
       const efficiencyScore = records.length > 0
-        ? records.reduce((sum, r) => sum + (r.productivity_rating || 3), 0) / records.length
+        ? records.reduce((sum: number, r: any) => sum + (r.productivity_rating || 3), 0) / records.length
         : 0
 
       return {
@@ -351,6 +355,7 @@ export class TaskShootService {
    */
   async getActiveRecord(userId: string): Promise<TimeRecord | null> {
     try {
+      const supabase = getSupabaseClient()
       const { data, error } = await supabase
         .from('time_records')
         .select('*')
@@ -376,6 +381,7 @@ export class TaskShootService {
     dailyProductivity: Array<{ date: string; averageRating: number; totalMinutes: number }>
   }> {
     try {
+      const supabase = getSupabaseClient()
       // タスク別効率性
       const { data: taskData, error: taskError } = await supabase
         .from('time_records')
@@ -387,7 +393,7 @@ export class TaskShootService {
       if (taskError) throw taskError
 
       const taskEfficiency = (taskData || [])
-        .reduce((acc: any[], record) => {
+        .reduce((acc: any[], record: any) => {
           const existing = acc.find(item => item.taskId === record.task_id)
           if (existing) {
             existing.totalRating += record.productivity_rating
@@ -417,7 +423,7 @@ export class TaskShootService {
       if (dailyError) throw dailyError
 
       const dailyProductivity = (dailyData || [])
-        .reduce((acc: any[], record) => {
+        .reduce((acc: any[], record: any) => {
           const date = record.start_time.split('T')[0]
           const existing = acc.find(item => item.date === date)
           

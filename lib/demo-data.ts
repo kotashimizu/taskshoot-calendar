@@ -56,7 +56,7 @@ export const DEMO_TASKS: TaskWithCategory[] = [
     start_date: new Date().toISOString(),
     completed_at: null,
     estimated_minutes: 120,
-    actual_minutes: null,
+    actual_minutes: 0,
     tags: ['企画', '重要'],
     notes: 'プレゼンテーション用のスライドも含める',
     is_recurring: false,
@@ -79,7 +79,7 @@ export const DEMO_TASKS: TaskWithCategory[] = [
     start_date: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000).toISOString(),
     completed_at: null,
     estimated_minutes: 30,
-    actual_minutes: null,
+    actual_minutes: 0,
     tags: ['ミーティング'],
     notes: '',
     is_recurring: true,
@@ -102,7 +102,7 @@ export const DEMO_TASKS: TaskWithCategory[] = [
     start_date: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(),
     completed_at: null,
     estimated_minutes: 90,
-    actual_minutes: null,
+    actual_minutes: 0,
     tags: ['買い物', '日用品'],
     notes: '牛乳、パン、野菜を忘れずに',
     is_recurring: false,
@@ -148,7 +148,7 @@ export const DEMO_TASKS: TaskWithCategory[] = [
     start_date: new Date().toISOString(),
     completed_at: null,
     estimated_minutes: 60,
-    actual_minutes: null,
+    actual_minutes: 0,
     tags: ['バグ修正', '緊急'],
     notes: 'セッション管理の問題を調査',
     is_recurring: false,
@@ -179,7 +179,7 @@ export const DEMO_STATS: TaskStats = {
 /**
  * デモモード用のタスクCRUD操作
  */
-let demoTasksState = [...DEMO_TASKS];
+const demoTasksState = [...DEMO_TASKS];
 let demoId = 1000;
 
 export const demoTaskOperations = {
@@ -254,7 +254,7 @@ export const demoTaskOperations = {
           start_date: data.start_date || null,
           completed_at: null,
           estimated_minutes: data.estimated_minutes || null,
-          actual_minutes: null,
+          actual_minutes: 0,
           tags: data.tags || [],
           notes: data.notes || '',
           is_recurring: data.is_recurring || false,
