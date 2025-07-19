@@ -3,7 +3,7 @@
  * 要件定義に基づく実用的な実装
  */
 
-import { getSupabaseClient } from '@/lib/supabase/client'
+import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/lib/logger'
 import type {
   Task,
@@ -35,7 +35,7 @@ export class TaskService {
     try {
       logger.debug('Getting tasks', { userId, filters, sort, limit, offset })
 
-      const supabase = getSupabaseClient()
+      const supabase = createClient()
       let query = supabase
         .from('tasks')
         .select(`
@@ -92,7 +92,7 @@ export class TaskService {
     try {
       logger.debug('Creating task', { userId, taskData })
 
-      const supabase = getSupabaseClient()
+      const supabase = createClient()
       const { data, error } = await supabase
         .from('tasks')
         .insert({
@@ -119,7 +119,7 @@ export class TaskService {
     try {
       logger.debug('Updating task', { userId, taskId, updates })
 
-      const supabase = getSupabaseClient()
+      const supabase = createClient()
       const { data, error } = await supabase
         .from('tasks')
         .update({
@@ -148,7 +148,7 @@ export class TaskService {
     try {
       logger.debug('Deleting task', { userId, taskId })
 
-      const supabase = getSupabaseClient()
+      const supabase = createClient()
       const { error } = await supabase
         .from('tasks')
         .delete()
@@ -169,7 +169,7 @@ export class TaskService {
    */
   async getTask(userId: string, taskId: string): Promise<TaskWithCategory | null> {
     try {
-      const supabase = getSupabaseClient()
+      const supabase = createClient()
       const { data, error } = await supabase
         .from('tasks')
         .select(`
@@ -201,7 +201,7 @@ export class TaskService {
    */
   async getTaskStats(userId: string): Promise<TaskStats> {
     try {
-      const supabase = getSupabaseClient()
+      const supabase = createClient()
       const { data, error } = await supabase
         .from('tasks')
         .select('status, priority')
@@ -242,7 +242,7 @@ export class TaskService {
    */
   async getCategories(userId: string): Promise<Category[]> {
     try {
-      const supabase = getSupabaseClient()
+      const supabase = createClient()
       const { data, error } = await supabase
         .from('categories')
         .select('*')
@@ -263,7 +263,7 @@ export class TaskService {
    */
   async createCategory(userId: string, categoryData: CategoryInsert): Promise<Category> {
     try {
-      const supabase = getSupabaseClient()
+      const supabase = createClient()
       const { data, error } = await supabase
         .from('categories')
         .insert({
@@ -287,7 +287,7 @@ export class TaskService {
    */
   async updateCategory(userId: string, categoryId: string, updates: CategoryUpdate): Promise<Category> {
     try {
-      const supabase = getSupabaseClient()
+      const supabase = createClient()
       const { data, error } = await supabase
         .from('categories')
         .update({
@@ -313,7 +313,7 @@ export class TaskService {
    */
   async deleteCategory(userId: string, categoryId: string): Promise<void> {
     try {
-      const supabase = getSupabaseClient()
+      const supabase = createClient()
       const { error } = await supabase
         .from('categories')
         .delete()
