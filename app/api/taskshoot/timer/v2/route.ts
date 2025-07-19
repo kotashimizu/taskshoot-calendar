@@ -28,11 +28,6 @@ const timerActionSchema = z.object({
   notes: z.string().optional()
 })
 
-const timerStatusSchema = z.object({
-  user_id: z.string().uuid().optional(),
-  task_id: z.string().uuid().optional(),
-  include_sessions: z.boolean().optional()
-})
 
 /**
  * GET /api/taskshoot/timer/v2 - タイマー状態取得
@@ -143,7 +138,7 @@ export async function POST(request: NextRequest) {
           .single()
 
         if (existingActive) {
-          throw new Error(`既にタスク「${existingActive.tasks?.title}」でタイマーが動作中です`)
+          throw new Error(`既にタスク「${(existingActive as any).tasks?.title || 'Unknown'}」でタイマーが動作中です`)
         }
 
         // 新しい時間記録を開始
@@ -385,8 +380,8 @@ function intervalToMilliseconds(interval: string): number {
   const match = interval.match(/(\d+)\s*(milliseconds?|seconds?|minutes?|hours?)/)
   if (!match) return 0
 
-  const value = parseInt(match[1])
-  const unit = match[2]
+  const value = parseInt(match[1]!)
+  const unit = match[2]!
 
   switch (unit) {
     case 'millisecond':

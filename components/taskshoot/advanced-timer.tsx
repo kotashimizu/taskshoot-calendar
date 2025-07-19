@@ -10,7 +10,6 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { Slider } from '@/components/ui/slider'
@@ -24,8 +23,7 @@ import {
   Clock,
   Target,
   Brain,
-  Coffee,
-  AlertCircle
+  Coffee
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -388,7 +386,7 @@ export function AdvancedTimer({
               </Label>
               <Slider
                 value={[focusScore]}
-                onValueChange={(value) => setFocusScore(value[0])}
+                onValueChange={(value) => setFocusScore(value[0] || 5)}
                 max={10}
                 min={1}
                 step={1}
@@ -417,7 +415,7 @@ export function AdvancedTimer({
           <div className="pt-4 border-t">
             <Label className="text-sm font-medium">セッション履歴</Label>
             <div className="mt-2 space-y-1 max-h-32 overflow-y-auto">
-              {timerState.sessions.slice(0, 3).map((session: any, index: number) => (
+              {timerState.sessions.slice(0, 3).map((session: any) => (
                 <div key={session.id} className="flex items-center justify-between text-xs p-2 bg-muted rounded">
                   <div className="flex items-center gap-2">
                     {getSessionIcon(session.session_type)}
@@ -441,8 +439,8 @@ function parsePausedDuration(duration: string): number {
   const match = duration.match(/(\d+)\s*(milliseconds?|seconds?|minutes?|hours?)/)
   if (!match) return 0
 
-  const value = parseInt(match[1])
-  const unit = match[2]
+  const value = parseInt(match[1]!)
+  const unit = match[2]!
 
   switch (unit) {
     case 'millisecond':

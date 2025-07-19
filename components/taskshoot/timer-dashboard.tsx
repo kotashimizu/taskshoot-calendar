@@ -30,7 +30,7 @@ import { cn } from '@/lib/utils'
 interface Task {
   id: string
   title: string
-  description?: string
+  description?: string | null
   priority: string
   estimated_minutes?: number
   status: string

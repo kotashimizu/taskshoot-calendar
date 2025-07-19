@@ -26,7 +26,7 @@ export default function TaskShootPage() {
   // タスクデータ取得
   const filters: TaskFilters = { status: ['pending', 'in_progress'] }
   const sort: TaskSortOptions = { field: 'created_at', direction: 'desc' }
-  const { tasks, loading: tasksLoading } = useTasks(filters, sort)
+  const { tasks } = useTasks(filters, sort)
 
   return (
     <div className="container mx-auto px-4 py-6 space-y-6">
