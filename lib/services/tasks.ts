@@ -46,14 +46,14 @@ export class TaskService {
 
       // フィルタリング
       if (filters) {
-        if (filters.status) {
-          query = query.eq('status', filters.status)
+        if (filters.status && filters.status.length > 0) {
+          query = query.in('status', filters.status)
         }
-        if (filters.priority) {
-          query = query.eq('priority', filters.priority)
+        if (filters.priority && filters.priority.length > 0) {
+          query = query.in('priority', filters.priority)
         }
-        if (filters.category_id) {
-          query = query.eq('category_id', filters.category_id)
+        if (filters.category_id && filters.category_id.length > 0) {
+          query = query.in('category_id', filters.category_id)
         }
         if (filters.search) {
           query = query.or(`title.ilike.%${filters.search}%,description.ilike.%${filters.search}%`)
