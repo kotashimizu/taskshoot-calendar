@@ -75,14 +75,22 @@ export function TimerDashboard({ tasks: propTasks = [], className }: TimerDashbo
     try {
       console.log('タスクスケジュール:', { taskId, startTime })
       
+      // 今日の日付と時間を組み合わせて完全な日時文字列を作成
+      const today = new Date()
+      const [hours, minutes] = startTime.split(':')
+      const scheduleDate = new Date(today.getFullYear(), today.getMonth(), today.getDate(), parseInt(hours), parseInt(minutes))
+      const isoDateString = scheduleDate.toISOString()
+      
+      console.log('スケジュール日時:', isoDateString)
+      
       // APIを呼び出してタスクの開始時間を更新
       const response = await fetch(`/api/tasks/${taskId}`, {
-        method: 'PATCH',
+        method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          start_time: startTime
+          start_date: isoDateString
         })
       })
 

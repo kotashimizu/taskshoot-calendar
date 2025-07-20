@@ -64,18 +64,40 @@ export function DailyTimelineCalendar({
         hour,
         minute: 0,
         timeString,
-        tasks: [], // TODO: タスクをスロットに割り当て
+        tasks: [],
         color
       })
     }
 
-    // サンプルタスクを配置
-    if (tasks.length > 0 && slots.length >= 13) {
-      // 最初の3つのタスクを時間帯に配置
-      if (slots[0]) slots[0].tasks = tasks.slice(0, 1) // 00:00
-      if (slots[8]) slots[8].tasks = tasks.slice(1, 2) // 08:00
-      if (slots[12]) slots[12].tasks = tasks.slice(2, 3) // 12:00
-    }
+    // タスクを適切な時間スロットに配置
+    tasks.forEach(task => {
+      if (task.start_date) {
+        const startDate = new Date(task.start_date)
+        const taskHour = startDate.getHours()
+        
+        // 今日のタスクのみを表示
+        const today = new Date()
+        const isToday = startDate.getDate() === today.getDate() &&
+                       startDate.getMonth() === today.getMonth() &&
+                       startDate.getFullYear() === today.getFullYear()
+        
+        if (isToday) {
+          const slot = slots.find(s => s.hour === taskHour)
+          if (slot) {
+            slot.tasks.push(task as ScheduledTask)
+          }
+        }
+      }
+    })
+
+    // 優先度順にソート（高優先度が上に）
+    slots.forEach(slot => {
+      slot.tasks.sort((a, b) => {
+        const priorityOrder = { 'urgent': 4, 'high': 3, 'medium': 2, 'low': 1 }
+        return (priorityOrder[b.priority as keyof typeof priorityOrder] || 0) - 
+               (priorityOrder[a.priority as keyof typeof priorityOrder] || 0)
+      })
+    })
 
     setTimeSlots(slots)
   }, [tasks])
