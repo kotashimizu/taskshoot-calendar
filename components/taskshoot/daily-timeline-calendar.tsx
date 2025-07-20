@@ -10,14 +10,9 @@
 import React, { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
+import { Task } from '@/types/tasks'
 
-interface Task {
-  id: string
-  title: string
-  description?: string | null
-  priority: string
-  estimated_minutes?: number
-  status: string
+interface ScheduledTask extends Task {
   start_time?: string
   end_time?: string
 }
@@ -26,18 +21,24 @@ interface TimeSlot {
   hour: number
   minute: number
   timeString: string
-  tasks: Task[]
+  tasks: ScheduledTask[]
   color: 'blue' | 'green' | 'yellow' | 'gray'
 }
 
 interface DailyTimelineCalendarProps {
   tasks?: Task[]
   className?: string
+  onTaskSchedule?: (taskId: string, startTime: string) => void
 }
 
-export function DailyTimelineCalendar({ tasks: propTasks = [], className }: DailyTimelineCalendarProps) {
-  const [tasks] = useState<Task[]>(propTasks)
+export function DailyTimelineCalendar({ 
+  tasks: propTasks = [], 
+  className,
+  onTaskSchedule 
+}: DailyTimelineCalendarProps) {
+  const [tasks] = useState<ScheduledTask[]>(propTasks as ScheduledTask[])
   const [timeSlots, setTimeSlots] = useState<TimeSlot[]>([])
+  const [dragOverSlot, setDragOverSlot] = useState<string | null>(null)
 
   // 時刻スロット生成
   useEffect(() => {
@@ -105,6 +106,32 @@ export function DailyTimelineCalendar({ tasks: propTasks = [], className }: Dail
     }
   }
 
+  // ドラッグアンドドロップハンドラー
+  const handleDragOver = (e: React.DragEvent, timeString: string) => {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'move'
+    setDragOverSlot(timeString)
+  }
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault()
+    setDragOverSlot(null)
+  }
+
+  const handleDrop = (e: React.DragEvent, timeString: string) => {
+    e.preventDefault()
+    setDragOverSlot(null)
+    
+    try {
+      const dragData = JSON.parse(e.dataTransfer.getData('application/json'))
+      if (dragData && dragData.id && onTaskSchedule) {
+        onTaskSchedule(dragData.id, timeString)
+      }
+    } catch (error) {
+      console.error('ドロップエラー:', error)
+    }
+  }
+
   const getCurrentTimeIndicator = () => {
     const now = new Date()
     const currentHour = now.getHours()
@@ -164,7 +191,15 @@ export function DailyTimelineCalendar({ tasks: propTasks = [], className }: Dail
                 </div>
 
                 {/* タスクエリア */}
-                <div className="flex-1 p-2 relative">
+                <div 
+                  className={cn(
+                    "flex-1 p-2 relative transition-colors",
+                    dragOverSlot === slot.timeString && "bg-blue-100 border-2 border-blue-300 border-dashed"
+                  )}
+                  onDragOver={(e) => handleDragOver(e, slot.timeString)}
+                  onDragLeave={handleDragLeave}
+                  onDrop={(e) => handleDrop(e, slot.timeString)}
+                >
                   {slot.tasks.length > 0 ? (
                     <div className="space-y-1">
                       {slot.tasks.map((task) => (
@@ -183,6 +218,10 @@ export function DailyTimelineCalendar({ tasks: propTasks = [], className }: Dail
                           )}
                         </div>
                       ))}
+                    </div>
+                  ) : dragOverSlot === slot.timeString ? (
+                    <div className="text-sm text-blue-600 text-center py-4">
+                      ここにタスクをドロップ
                     </div>
                   ) : (
                     <div className="h-full flex items-center justify-center text-xs text-gray-400">

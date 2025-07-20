@@ -56,6 +56,21 @@ const PROJECTS = ['プロジェクト', 'プロジェクトA', 'プロジェク�
 const MODES = ['モード', '集中', 'レビュー', '調査', '開発']
 const AVAILABLE_TAGS = ['重要', '緊急', 'バグ修正', '新機能', 'リファクタリング']
 
+const TIME_ESTIMATES = [
+  { label: '実際の値：未入力', value: 0 },
+  { label: '実績時間の平均', value: -1 }, // 特別な値として-1を使用
+  { label: '5分間', value: 5 },
+  { label: '10分間', value: 10 },
+  { label: '15分間', value: 15 },
+  { label: '20分間', value: 20 },
+  { label: '30分間', value: 30 },
+  { label: '45分間', value: 45 },
+  { label: '1時間', value: 60 },
+  { label: '1時間30分', value: 90 },
+  { label: '2時間', value: 120 },
+  { label: '3時間', value: 180 },
+]
+
 export function InlineTaskRow({ 
   task, 
   isNew = false, 
@@ -129,6 +144,30 @@ export function InlineTaskRow({
     } else if (e.key === 'Escape') {
       handleCancel()
     }
+  }
+
+  const handleDragStart = (e: React.DragEvent) => {
+    if (!task) return
+    
+    // ドラッグ中のタスクデータを設定
+    const dragData = {
+      id: task.id,
+      title: task.title,
+      estimated_minutes: task.estimated_minutes,
+      priority: task.priority,
+      tags: task.tags
+    }
+    
+    e.dataTransfer.setData('application/json', JSON.stringify(dragData))
+    e.dataTransfer.effectAllowed = 'move'
+    
+    // ドラッグ中の視覚的フィードバック
+    e.currentTarget.style.opacity = '0.5'
+  }
+
+  const handleDragEnd = (e: React.DragEvent) => {
+    // ドラッグ終了時に透明度を元に戻す
+    e.currentTarget.style.opacity = '1'
   }
 
   const addTag = (tagName: string) => {
@@ -242,18 +281,27 @@ export function InlineTaskRow({
             </div>
 
             {/* 見積時間 */}
-            <div className="flex items-center gap-1">
-              <Clock className="h-3 w-3 text-gray-500" />
-              <Input
-                type="number"
-                value={estimatedMinutes || ''}
-                onChange={(e) => setEstimatedMinutes(parseInt(e.target.value) || 0)}
-                placeholder="分"
-                className="w-16 h-7 text-xs"
-                min="0"
-              />
-              <span className="text-xs text-gray-500">分</span>
-            </div>
+            <Select 
+              value={estimatedMinutes?.toString() || '0'} 
+              onValueChange={(value) => setEstimatedMinutes(parseInt(value))}
+            >
+              <SelectTrigger className="w-auto h-7 text-xs">
+                <div className="flex items-center gap-1">
+                  <Clock className="h-3 w-3 text-gray-500" />
+                  <SelectValue placeholder="時間を選択" />
+                </div>
+              </SelectTrigger>
+              <SelectContent>
+                {TIME_ESTIMATES.map((estimate) => (
+                  <SelectItem key={estimate.value} value={estimate.value.toString()}>
+                    <div className="flex items-center gap-1">
+                      <Clock className="h-3 w-3" />
+                      {estimate.label}
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
 
@@ -277,6 +325,9 @@ export function InlineTaskRow({
     <div 
       className={cn("flex items-center gap-3 p-3 border rounded-lg hover:bg-gray-50 cursor-pointer", className)}
       onClick={() => setIsEditing(true)}
+      draggable={true}
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
     >
       {/* 再生ボタン */}
       <Button 

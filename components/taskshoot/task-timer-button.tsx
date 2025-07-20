@@ -38,7 +38,6 @@ interface TimerState {
 
 export function TaskTimerButton({ 
   taskId, 
-  taskTitle,
   estimatedMinutes,
   onTimerStart,
   onTimerStop,

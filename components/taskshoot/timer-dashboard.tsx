@@ -9,48 +9,14 @@
  */
 
 import React, { useState, useEffect } from 'react'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Separator } from '@/components/ui/separator'
+import { Card, CardContent } from '@/components/ui/card'
 import { RedesignedTimerDashboard } from './redesigned-timer-dashboard'
 import { DailyTimelineCalendar } from './daily-timeline-calendar'
 import { AdvancedTimer } from './advanced-timer'
-import { 
-  Clock, 
-  Play, 
-  Target, 
-  TrendingUp, 
-  Calendar,
-  CheckCircle,
-  BarChart3,
-  Timer as TimerIcon
-} from 'lucide-react'
+import { Timer as TimerIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { Task } from '@/types/tasks'
 
-interface Task {
-  id: string
-  title: string
-  description?: string | null
-  priority: string
-  estimated_minutes?: number
-  status: string
-}
-
-interface DailyStats {
-  total_sessions: number
-  total_hours: number
-  completed_tasks: number
-  avg_focus_score: number
-}
-
-interface RecentRecord {
-  id: string
-  task_title: string
-  duration_minutes: number
-  focus_score: number
-  completed_at: string
-}
 
 interface TimerDashboardProps {
   tasks?: Task[]
@@ -61,8 +27,6 @@ export function TimerDashboard({ tasks: propTasks = [], className }: TimerDashbo
   // State
   const [tasks, setTasks] = useState<Task[]>(propTasks)
   const [selectedTask, setSelectedTask] = useState<Task | null>(null)
-  const [dailyStats, setDailyStats] = useState<DailyStats | null>(null)
-  const [recentRecords, setRecentRecords] = useState<RecentRecord[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [activeTimer, setActiveTimer] = useState<any>(null)
 
@@ -71,28 +35,9 @@ export function TimerDashboard({ tasks: propTasks = [], className }: TimerDashbo
     try {
       setIsLoading(true)
       
-      // 並行してデータを取得（タスクは除く - propsから取得）
-      const [statsRes, recordsRes, timerRes] = await Promise.all([
-        fetch('/api/taskshoot/stats?period=today'),
-        fetch('/api/taskshoot/stats?recent=5'),
-        fetch('/api/taskshoot/timer/v2')
-      ])
+      // アクティブタイマーを取得
+      const timerRes = await fetch('/api/taskshoot/timer/v2')
 
-      // 本日の統計
-      if (statsRes.ok) {
-        const statsData = await statsRes.json()
-        if (statsData.success) {
-          setDailyStats(statsData.data)
-        }
-      }
-
-      // 最近の記録
-      if (recordsRes.ok) {
-        const recordsData = await recordsRes.json()
-        if (recordsData.success) {
-          setRecentRecords(recordsData.data || [])
-        }
-      }
 
       // アクティブタイマー
       if (timerRes.ok) {
@@ -114,11 +59,6 @@ export function TimerDashboard({ tasks: propTasks = [], className }: TimerDashbo
     }
   }
 
-  // タスク選択
-  const handleTaskSelect = (taskId: string) => {
-    const task = tasks.find(t => t.id === taskId)
-    setSelectedTask(task || null)
-  }
 
   // タイマー状態変更時
   const handleTimerChange = (timerState: any) => {
@@ -130,26 +70,34 @@ export function TimerDashboard({ tasks: propTasks = [], className }: TimerDashbo
     }
   }
 
-  // 優先度カラー
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'high': return 'bg-red-500'
-      case 'medium': return 'bg-yellow-500'
-      case 'low': return 'bg-green-500'
-      default: return 'bg-gray-500'
+  // タスクスケジュール機能
+  const handleTaskSchedule = async (taskId: string, startTime: string) => {
+    try {
+      console.log('タスクスケジュール:', { taskId, startTime })
+      
+      // APIを呼び出してタスクの開始時間を更新
+      const response = await fetch(`/api/tasks/${taskId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          start_time: startTime
+        })
+      })
+
+      if (response.ok) {
+        // 成功時にデータを再取得
+        fetchDashboardData()
+        console.log('タスクが正常にスケジュールされました')
+      } else {
+        console.error('タスクスケジュールに失敗しました')
+      }
+    } catch (error) {
+      console.error('タスクスケジュールエラー:', error)
     }
   }
 
-  // 時間フォーマット
-  const formatDuration = (minutes: number): string => {
-    const hours = Math.floor(minutes / 60)
-    const mins = Math.round(minutes % 60)
-    
-    if (hours > 0) {
-      return `${hours}時間${mins}分`
-    }
-    return `${mins}分`
-  }
 
   // propsでタスクが変更された際の更新
   useEffect(() => {
@@ -183,7 +131,10 @@ export function TimerDashboard({ tasks: propTasks = [], className }: TimerDashbo
 
         {/* 右側: タイムラインカレンダー (1/3幅) */}
         <div className="xl:col-span-1">
-          <DailyTimelineCalendar tasks={tasks} />
+          <DailyTimelineCalendar 
+            tasks={tasks} 
+            onTaskSchedule={handleTaskSchedule}
+          />
         </div>
       </div>
 
