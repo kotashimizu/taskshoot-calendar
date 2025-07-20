@@ -8,8 +8,6 @@
 
 import React, { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
 import {
   Dialog,
   DialogContent,
@@ -18,30 +16,22 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog'
 import { 
-  Play, 
   Clock,
   Calendar,
-  CheckCircle,
   User,
   Timer as TimerIcon,
   ChevronDown,
   ChevronRight,
-  Plus
+  Plus,
+  Settings
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { TaskList } from '@/components/tasks/task-list'
 import { useTasks } from '@/hooks/use-tasks'
 import { useToast } from '@/hooks/use-toast'
-import { TaskFormData, TaskFilters, TaskSortOptions } from '@/types/tasks'
+import { Task, TaskFormData, TaskFilters, TaskSortOptions, TaskPriority, TaskStatus } from '@/types/tasks'
+import { InlineTaskRow } from '@/components/taskshoot/inline-task-row'
 
-interface Task {
-  id: string
-  title: string
-  description?: string | null
-  priority: string
-  estimated_minutes?: number
-  status: string
-}
 
 interface RedesignedTimerDashboardProps {
   tasks?: Task[]
@@ -66,9 +56,8 @@ interface DashboardStats {
 }
 
 export function RedesignedTimerDashboard({ tasks: propTasks = [], className }: RedesignedTimerDashboardProps) {
-  const [tasks, setTasks] = useState<Task[]>(propTasks)
-  const [selectedTask, setSelectedTask] = useState<Task | null>(null)
   const [isTaskDialogOpen, setIsTaskDialogOpen] = useState(false)
+  const [isAddingNewTask, setIsAddingNewTask] = useState(false)
   const [stats, setStats] = useState<DashboardStats>({
     totalTasks: 0,
     completedTasks: 0,
@@ -135,7 +124,6 @@ export function RedesignedTimerDashboard({ tasks: propTasks = [], className }: R
 
   // タスクを時間セクションに分類
   useEffect(() => {
-    setTasks(propTasks)
     
     // 統計計算
     const totalTasks = propTasks.length
@@ -166,6 +154,29 @@ export function RedesignedTimerDashboard({ tasks: propTasks = [], className }: R
     setTimeSections(updatedSections)
   }, [propTasks])
 
+  // インライン新規タスク作成
+  const handleInlineCreateTask = async (data: Partial<any>) => {
+    if (!data.title?.trim()) return
+    
+    const taskData: TaskFormData = {
+      title: data.title,
+      description: undefined,
+      priority: (data.priority as TaskPriority) || 'medium',
+      status: (data.status as TaskStatus) || 'pending',
+      estimated_minutes: data.estimated_minutes,
+      tags: data.tags
+    }
+    
+    const result = await createTask(taskData)
+    if (result) {
+      toast({
+        title: "成功",
+        description: "タスクが作成されました",
+      })
+      setIsAddingNewTask(false)
+    }
+  }
+
   // タスク管理ハンドラー
   const handleCreateTask = async (data: TaskFormData) => {
     const result = await createTask(data)
@@ -175,6 +186,27 @@ export function RedesignedTimerDashboard({ tasks: propTasks = [], className }: R
         description: "タスクが作成されました",
       })
       setIsTaskDialogOpen(false)
+    }
+  }
+
+  // インライン編集ハンドラー
+  const handleInlineUpdateTask = async (data: Partial<any>) => {
+    if (!data.id || !data.title?.trim()) return
+    
+    const taskData: Partial<TaskFormData> = {
+      title: data.title,
+      priority: data.priority as TaskPriority,
+      status: data.status as TaskStatus,
+      estimated_minutes: data.estimated_minutes,
+      tags: data.tags
+    }
+    
+    const result = await updateTask(data.id, taskData)
+    if (result) {
+      toast({
+        title: "成功",
+        description: "タスクが更新されました",
+      })
     }
   }
 
@@ -208,8 +240,12 @@ export function RedesignedTimerDashboard({ tasks: propTasks = [], className }: R
     }
   }
 
-  const handleTaskSelect = (task: Task) => {
-    setSelectedTask(task)
+  const handlePlayTask = (task: Task) => {
+    // TODO: タスク開始処理
+    toast({
+      title: "タスク開始",
+      description: `「${task.title}」を開始しました`,
+    })
   }
 
   const toggleSection = (sectionId: string) => {
@@ -218,15 +254,6 @@ export function RedesignedTimerDashboard({ tasks: propTasks = [], className }: R
         ? { ...section, expanded: !section.expanded }
         : section
     ))
-  }
-
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'high': return 'bg-red-500'
-      case 'medium': return 'bg-yellow-500'
-      case 'low': return 'bg-green-500'
-      default: return 'bg-gray-500'
-    }
   }
 
   const currentDate = new Date().toLocaleDateString('ja-JP', {
@@ -245,12 +272,21 @@ export function RedesignedTimerDashboard({ tasks: propTasks = [], className }: R
             <Calendar className="h-5 w-5 text-gray-600" />
             <span className="text-sm text-gray-600">{currentDate}</span>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="flex items-center gap-2"
+              onClick={() => setIsAddingNewTask(true)}
+            >
+              <Plus className="h-4 w-4" />
+              新規タスク
+            </Button>
             <Dialog open={isTaskDialogOpen} onOpenChange={setIsTaskDialogOpen}>
               <DialogTrigger asChild>
                 <Button variant="outline" size="sm" className="flex items-center gap-2">
-                  <Plus className="h-4 w-4" />
-                  タスク追加
+                  <Settings className="h-4 w-4" />
+                  タスク管理
                 </Button>
               </DialogTrigger>
               <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
@@ -368,59 +404,30 @@ export function RedesignedTimerDashboard({ tasks: propTasks = [], className }: R
             {/* タスクリスト */}
             {section.expanded && (
               <div className="p-3 space-y-2">
+                {/* 新規タスク追加行 */}
+                {section.id === 'no-time' && isAddingNewTask && (
+                  <InlineTaskRow
+                    isNew={true}
+                    onSave={handleInlineCreateTask}
+                    onCancel={() => setIsAddingNewTask(false)}
+                  />
+                )}
+                
+                {/* 既存タスク一覧 */}
                 {section.tasks.length > 0 ? (
                   section.tasks.map((task) => (
-                    <div
+                    <InlineTaskRow
                       key={task.id}
-                      className="flex items-center gap-3 p-3 border rounded-lg hover:bg-gray-50 cursor-pointer"
-                      onClick={() => handleTaskSelect(task)}
-                    >
-                      {/* 再生ボタン */}
-                      <Button size="sm" variant="default" className="h-8 w-8 p-0 rounded-full">
-                        <Play className="h-4 w-4" />
-                      </Button>
-
-                      {/* タスク情報 */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <div className={cn("w-2 h-2 rounded-full", getPriorityColor(task.priority))} />
-                          <span className="font-medium text-sm text-gray-900 truncate">
-                            {task.title}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2 text-xs text-gray-500">
-                          <span>プロジェクト</span>
-                          <User className="h-3 w-3" />
-                          <span>モード</span>
-                          <div className="w-4 h-3 bg-gray-300 rounded"></div>
-                          <span>タグ</span>
-                        </div>
-                      </div>
-
-                      {/* 統計情報 */}
-                      <div className="flex items-center gap-3 text-sm">
-                        <div className="flex items-center gap-1">
-                          <User className="h-4 w-4 text-gray-500" />
-                          <span className="text-gray-600">--:--</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Clock className="h-4 w-4 text-gray-500" />
-                          <span className="text-gray-600">--:--</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <TimerIcon className="h-4 w-4 text-gray-500" />
-                          <span className="text-gray-600">--:--</span>
-                        </div>
-                        <div className="text-gray-600">→</div>
-                        <div className="text-gray-600">--:--</div>
-                      </div>
-                    </div>
+                      task={task}
+                      onSave={handleInlineUpdateTask}
+                      onPlay={handlePlayTask}
+                    />
                   ))
-                ) : (
+                ) : !isAddingNewTask || section.id !== 'no-time' ? (
                   <div className="text-center py-4 text-gray-500 text-sm">
                     このセクションにはタスクがありません
                   </div>
-                )}
+                ) : null}
               </div>
             )}
           </div>
