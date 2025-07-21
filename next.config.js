@@ -37,12 +37,7 @@ const nextConfig = {
   // セキュリティ重視の設定
   poweredByHeader: false,
 
-  // 環境変数の公開設定
-  env: {
-    NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
-    NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-    NEXT_PUBLIC_DEMO_MODE: process.env.NEXT_PUBLIC_DEMO_MODE,
-  },
+  // 環境変数は自動的に読み込まれます（NEXT_PUBLIC_プレフィックス）
 
   // 実験的機能
   experimental: {
